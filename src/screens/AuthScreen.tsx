@@ -13,6 +13,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, radius } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
+import { signInWithGoogle } from "@/lib/oauth";
 
 export default function AuthScreen() {
   const { signIn, signUp } = useAuthStore();
@@ -70,6 +71,19 @@ export default function AuthScreen() {
               <Text style={styles.buttonText}>{busy ? "..." : isLogin ? "Se connecter" : "Créer mon compte"}</Text>
             </Pressable>
 
+            <Pressable
+              style={[styles.googleButton, busy && { opacity: 0.6 }]}
+              onPress={async () => {
+                setBusy(true);
+                const error = await signInWithGoogle();
+                setBusy(false);
+                if (error) Alert.alert("Google", error);
+              }}
+              disabled={busy}
+            >
+              <Text style={styles.googleText}>G · Continuer avec Google</Text>
+            </Pressable>
+
             <Pressable onPress={() => setIsLogin((v) => !v)} style={{ marginTop: 16 }}>
               <Text style={styles.switchText}>
                 {isLogin ? "Pas de compte ? Inscrivez-vous" : "Déjà un compte ? Connectez-vous"}
@@ -78,7 +92,7 @@ export default function AuthScreen() {
           </View>
 
           <Text style={styles.footnote}>
-            Google Sign-In arrive dans la prochaine étape (Phase 1.1).
+            Vos entrées restent privées — l'IA lit uniquement vos réponses.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -118,6 +132,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   buttonText: { color: colors.white, fontSize: 16, fontWeight: "700" },
+  googleButton: {
+    backgroundColor: colors.white,
+    borderRadius: radius.input,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  googleText: { color: colors.text, fontSize: 15, fontWeight: "600" },
   switchText: { color: colors.primary, textAlign: "center", fontSize: 14, fontWeight: "600" },
   footnote: { color: colors.textFaint, textAlign: "center", marginTop: 24, fontSize: 12 },
 });

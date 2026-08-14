@@ -4,6 +4,7 @@
     "slug": "soul-journal",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "souljournal",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "backgroundColor": "#EAF6EF",
