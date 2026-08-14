@@ -1,17 +1,20 @@
 {
   "expo": {
-    "name": "soul-journal-mobile",
-    "slug": "soul-journal-mobile",
+    "name": "Soul Journal",
+    "slug": "soul-journal",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#EAF6EF",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.souljournal.app"
     },
     "android": {
+      "package": "com.souljournal.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#8FCFA8",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -20,6 +23,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-web-browser",
+      "expo-font",
+      "expo-splash-screen"
+    ]
   }
 }
