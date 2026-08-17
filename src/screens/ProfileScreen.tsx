@@ -79,7 +79,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Phase 2: Goals, Relations, Voice, AI features, Manage subscription */}
-        <Pressable style={[styles.row, shadows.soft]} onPress={() => Alert.alert(t("profile.comingSoon"), "Objectifs & IA — Phase 2.")}>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Goals")}>
           <View style={styles.rowIcon}>
             <Text style={styles.rowEmoji}>🎯</Text>
           </View>

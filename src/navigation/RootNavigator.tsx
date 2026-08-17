@@ -13,11 +13,13 @@ import LibraryScreen from "@/screens/LibraryScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import EntryDetailScreen from "@/screens/EntryDetailScreen";
 import VoiceScreen from "@/screens/VoiceScreen";
+import GoalsScreen from "@/screens/GoalsScreen";
 
 export type RootStackParamList = {
   Main: undefined;
   EntryDetail: { id: string };
   Voice: undefined;
+  Goals: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -104,6 +106,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
           <Stack.Screen name="Voice" component={VoiceScreen} />
+          <Stack.Screen name="Goals" component={GoalsScreen} />
         </Stack.Navigator>
       ) : (
         <AuthScreen />
