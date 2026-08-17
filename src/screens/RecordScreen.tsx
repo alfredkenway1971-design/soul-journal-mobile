@@ -19,6 +19,8 @@ const MOODS = [
   { key: "unhappy", labelKey: "record.moodUnhappy", emoji: "😢", score: 1, color: colors.mood.unhappy },
 ];
 
+const PROMPTS_URL = "https://soul-journal-seven.vercel.app/api/journaling-prompts";
+
 export default function RecordScreen() {
   const user = useAuthStore((s) => s.user);
   const language = useSettingsStore((s) => s.language);
@@ -31,6 +33,9 @@ export default function RecordScreen() {
   const [detectedLang, setDetectedLang] = useState<string | null>(null);
   const [mood, setMood] = useState<string>("fine");
   const [saving, setSaving] = useState(false);
+  const [prompts, setPrompts] = useState<string[]>([]);
+  const [promptsLoading, setPromptsLoading] = useState(false);
+  const promptsFetchedRef = useRef(false);
 
   useEffect(() => {
     Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
@@ -159,6 +164,58 @@ export default function RecordScreen() {
     }
   };
 
+  const loadPrompts = async () => {
+    if (!user || promptsLoading) return;
+    setPromptsLoading(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("no session");
+
+      const { data: recent } = await supabase
+        .from("journal_entries")
+        .select("title, enhanced_text, original_transcription")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(7);
+      const recentEntries = (recent ?? []).map((r) =>
+        (r.title || r.enhanced_text || r.original_transcription || "").substring(0, 200)
+      );
+
+      const langName = { en: "English", fr: "French", es: "Spanish", ar: "Arabic", zh: "Chinese", ja: "Japanese", sw: "Swahili", de: "German" }[language] ?? "French";
+      const res = await fetch(PROMPTS_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ recentEntries, goals: [], language: langName, styleSamples: [] }),
+      });
+      if (!res.ok) throw new Error(`prompts ${res.status}`);
+      const json = await res.json();
+      if (Array.isArray(json?.prompts) && json.prompts.length > 0) setPrompts(json.prompts.slice(0, 3));
+    } catch (e) {
+      console.warn("prompts error", e);
+      Alert.alert(t("record.promptsTitle"), t("record.promptsFailed"));
+    } finally {
+      setPromptsLoading(false);
+    }
+  };
+
+  const refreshPrompts = async () => {
+    setPrompts([]);
+    await loadPrompts();
+  };
+
+  // Load prompts once per screen visit (blank write screen)
+  useEffect(() => {
+    if (!promptsFetchedRef.current && user) {
+      promptsFetchedRef.current = true;
+      loadPrompts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   return (
     <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -195,6 +252,29 @@ export default function RecordScreen() {
           onChangeText={setText}
           textAlignVertical="top"
         />
+
+        {/* AI writing ideas (Smart Prompts) */}
+        {(prompts.length > 0 || promptsLoading) && (
+          <View style={[styles.promptsCard, shadows.soft]}>
+            <View style={styles.promptsHeader}>
+              <Text style={styles.promptsTitle}>{t("record.promptsTitle")}</Text>
+              <Pressable onPress={refreshPrompts} disabled={promptsLoading} hitSlop={8}>
+                <Text style={styles.promptsRefresh}>
+                  {promptsLoading ? t("record.promptsGenerating") : t("record.promptsRefresh")}
+                </Text>
+              </Pressable>
+            </View>
+            {prompts.map((p, i) => (
+              <Pressable
+                key={i}
+                style={styles.promptChip}
+                onPress={() => setText((prev) => (prev ? prev + "\n" : "") + p)}
+              >
+                <Text style={styles.promptText}>💡 {p}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         {/* Mood */}
         <Text style={styles.sectionLabel}>{t("record.howFeel")}</Text>
@@ -275,6 +355,27 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
   },
   sectionLabel: { fontSize: 14, color: colors.text, marginBottom: 10, fontFamily: fonts.bodySemiBold },
+  promptsCard: {
+    ...glassCard,
+    padding: 16,
+    marginBottom: 20,
+  },
+  promptsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  promptsTitle: { fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold },
+  promptsRefresh: { fontSize: 12, color: colors.primary, fontFamily: fonts.bodySemiBold },
+  promptChip: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.input,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+  },
+  promptText: { fontSize: 13, color: colors.text, lineHeight: 19, fontFamily: fonts.body },
   moodRow: { flexDirection: "row", gap: 8, flexWrap: "wrap", marginBottom: 24 },
   moodChip: {
     backgroundColor: colors.cardGlass,

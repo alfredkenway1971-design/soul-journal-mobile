@@ -56,12 +56,13 @@ export default function HomeScreen() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [insight, setInsight] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
-    const [{ data: profile }, { data: rows }, { count }] = await Promise.all([
+    const [{ data: profile }, { data: rows }, { count }, { data: latestInsight }] = await Promise.all([
       supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
       supabase
         .from("journal_entries")
@@ -73,10 +74,18 @@ export default function HomeScreen() {
         .from("journal_entries")
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id),
+      supabase
+        .from("coaching_insights")
+        .select("content")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
     if (profile?.display_name) setDisplayName(profile.display_name);
     if (rows) setEntries(rows);
     if (count != null) setTotalCount(count);
+    if (latestInsight?.content) setInsight(latestInsight.content);
     // streak needs all dates — lightweight select
     const { data: allDates } = await supabase
       .from("journal_entries")
@@ -145,6 +154,16 @@ export default function HomeScreen() {
                 </View>
               </View>
             </View>
+
+            {/* AI Insight (web home card, real coaching_insights data) */}
+            {insight && (
+              <View style={[styles.insightCard, shadows.card]}>
+                <View style={styles.insightHeader}>
+                  <Text style={styles.insightBadge}>✨ {t("home.aiInsight")}</Text>
+                </View>
+                <Text style={styles.insightText}>{insight}</Text>
+              </View>
+            )}
 
             {/* Quick capture */}
             <Pressable style={[styles.quickCard, shadows.soft]} onPress={() => navigation.navigate("Record")}>
@@ -221,6 +240,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textMuted,
     textAlign: "center",
+    fontFamily: fonts.body,
+  },
+  insightCard: {
+    ...glassCard,
+    padding: 18,
+    marginBottom: 16,
+    backgroundColor: "rgba(255,255,255,0.75)",
+  },
+  insightHeader: { marginBottom: 8 },
+  insightBadge: {
+    fontSize: 13,
+    color: colors.primary,
+    fontFamily: fonts.bodyBold,
+  },
+  insightText: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: colors.text,
     fontFamily: fonts.body,
   },
   quickCard: {
