@@ -3,7 +3,7 @@ import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Audio } from "expo-av";
+import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Haptics from "expo-haptics";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -61,7 +61,11 @@ export default function EntryDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const playerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
+
+  useEffect(() => {
+    setAudioModeAsync({ allowsRecording: false });
+  }, []);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -82,17 +86,17 @@ export default function EntryDetailScreen() {
 
   useEffect(() => {
     return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
+      playerRef.current?.remove();
     };
   }, []);
 
   const stopPlayback = async () => {
-    const s = soundRef.current;
-    soundRef.current = null;
-    if (s) {
+    const p = playerRef.current;
+    playerRef.current = null;
+    if (p) {
       try {
-        await s.stopAsync();
-        await s.unloadAsync();
+        p.pause();
+        p.remove();
       } catch {}
     }
     setPlaying(false);
@@ -138,26 +142,24 @@ export default function EntryDetailScreen() {
       const json = await res.json();
       if (!json?.audioContent) throw new Error("no audio");
 
-      // base64 -> file -> play (expo-av cannot stream from base64 directly)
+      // base64 -> file -> play
       const fileUri = `${FileSystem.cacheDirectory}voice-${entry.id}.mp3`;
       await FileSystem.writeAsStringAsync(fileUri, json.audioContent, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: fileUri },
-        { shouldPlay: true }
-      );
-      soundRef.current = sound;
+      const player = createAudioPlayer({ uri: fileUri });
+      playerRef.current = player;
       setGenerating(false);
       setPlaying(true);
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
+      player.addListener("playbackStatusUpdate", (status) => {
+        if (status.playbackState === "ended") {
           setPlaying(false);
-          sound.unloadAsync().catch(() => {});
-          soundRef.current = null;
+          player.remove();
+          playerRef.current = null;
         }
       });
+      player.play();
     } catch (e) {
       console.warn("play error", e);
       setGenerating(false);

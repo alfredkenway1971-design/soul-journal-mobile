@@ -8,9 +8,15 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "backgroundColor": "#cbe4f6",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#cbe4f6"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.souljournal.app"
+      "bundleIdentifier": "com.souljournal.app",
+      "icon": "./assets/icon.png"
     },
     "android": {
       "package": "com.souljournal.app",
@@ -28,7 +34,14 @@
     "plugins": [
       "expo-web-browser",
       "expo-font",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      "expo-audio",
+      [
+        "expo-notifications",
+        {
+          "color": "#1d81ed"
+        }
+      ]
     ]
   }
 }

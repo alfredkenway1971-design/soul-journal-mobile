@@ -3,7 +3,7 @@ import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Audio } from "expo-av";
+import { useAudioRecorder, requestRecordingPermissionsAsync, setAudioModeAsync, createAudioPlayer, RecordingPresets } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import * as FileSystem from "expo-file-system/legacy";
 import { useNavigation } from "@react-navigation/native";
@@ -23,19 +23,19 @@ export default function VoiceScreen() {
   const t = useT();
   const isPremium = useSubscriptionStore((s) => s.isPremium);
 
-  const recordingRef = useRef<Audio.Recording | null>(null);
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [isRecording, setIsRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [creating, setCreating] = useState(false);
   const [voiceId, setVoiceId] = useState<string | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const playerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
 
   useEffect(() => {
-    Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+    setAudioModeAsync({ allowsRecording: true });
     return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
+      playerRef.current?.remove();
     };
   }, []);
 
@@ -53,10 +53,10 @@ export default function VoiceScreen() {
   }, [user]);
 
   const stopPlayback = async () => {
-    const s = soundRef.current;
-    soundRef.current = null;
-    if (s) {
-      try { await s.stopAsync(); await s.unloadAsync(); } catch {}
+    const p = playerRef.current;
+    playerRef.current = null;
+    if (p) {
+      try { p.pause(); p.remove(); } catch {}
     }
     setPlaying(false);
   };
@@ -65,16 +65,17 @@ export default function VoiceScreen() {
     if (playing) { await stopPlayback(); return; }
     if (!recordedUri) return;
     try {
-      const { sound } = await Audio.Sound.createAsync({ uri: recordedUri }, { shouldPlay: true });
-      soundRef.current = sound;
-      setPlaying(true);
-      sound.setOnPlaybackStatusUpdate((st) => {
-        if (st.isLoaded && st.didJustFinish) {
+      const player = createAudioPlayer({ uri: recordedUri });
+      playerRef.current = player;
+      player.addListener("playbackStatusUpdate", (st) => {
+        if (st.playbackState === "ended") {
           setPlaying(false);
-          sound.unloadAsync().catch(() => {});
-          soundRef.current = null;
+          player.remove();
+          playerRef.current = null;
         }
       });
+      player.play();
+      setPlaying(true);
     } catch {
       Alert.alert("Error", "Impossible de lire l'échantillon.");
     }
@@ -83,39 +84,19 @@ export default function VoiceScreen() {
   const startRecording = async () => {
     try {
       await stopPlayback();
-      const perm = await Audio.requestPermissionsAsync();
+      const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) {
         Alert.alert(t("auth.privacy"), t("auth.micDenied"));
         return;
       }
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const recording = new Audio.Recording();
-      await recording.prepareToRecordAsync({
-        android: {
-          extension: ".m4a",
-          outputFormat: Audio.AndroidOutputFormat.DEFAULT,
-          audioEncoder: Audio.AndroidAudioEncoder.AAC,
-          sampleRate: 44100,
-          numberOfChannels: 1,
-          bitRate: 128000,
-        },
-        ios: {
-          extension: ".m4a",
-          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
-          audioQuality: Audio.IOSAudioQuality.HIGH,
-          sampleRate: 44100,
-          numberOfChannels: 1,
-          bitRate: 128000,
-        },
-        web: { mimeType: "audio/mp4" },
-      });
-      recordingRef.current = recording;
+      await recorder.prepareToRecordAsync();
+      recorder.record();
       setIsRecording(true);
       setSeconds(0);
       setRecordedUri(null);
-      await recording.startAsync();
       const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
-      (recording as any).__timer = timer;
+      (recorder as any).__timer = timer;
     } catch (e) {
       console.warn("rec error", e);
       Alert.alert("Error", t("record.recStartError"));
@@ -123,17 +104,14 @@ export default function VoiceScreen() {
   };
 
   const stopRecording = async () => {
-    const rec = recordingRef.current;
-    if (!rec) return;
     try {
-      await rec.stopAndUnloadAsync();
-      const timer = (rec as any).__timer;
+      recorder.stop();
+      const timer = (recorder as any).__timer;
       if (timer) clearInterval(timer);
     } catch {}
-    recordingRef.current = null;
     setIsRecording(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const uri = rec.getURI();
+    const uri = recorder.uri;
     if (!uri) {
       Alert.alert("Error", t("record.noAudio"));
       return;

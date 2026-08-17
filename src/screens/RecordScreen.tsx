@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Audio } from "expo-av";
+import { useAudioRecorder, requestRecordingPermissionsAsync, setAudioModeAsync, RecordingPresets } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import * as FileSystem from "expo-file-system/legacy";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
@@ -25,7 +25,7 @@ export default function RecordScreen() {
   const user = useAuthStore((s) => s.user);
   const language = useSettingsStore((s) => s.language);
   const t = useT();
-  const recordingRef = useRef<Audio.Recording | null>(null);
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -38,70 +38,42 @@ export default function RecordScreen() {
   const promptsFetchedRef = useRef(false);
 
   useEffect(() => {
-    Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+    setAudioModeAsync({ allowsRecording: true });
     return () => {
-      if (recordingRef.current) {
-        recordingRef.current.stopAndUnloadAsync().catch(() => {});
-      }
+      // recorder is a shared object from the hook; nothing to unload
     };
   }, []);
 
   const startRecording = async () => {
     try {
-      const perm = await Audio.requestPermissionsAsync();
+      const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) {
         Alert.alert(t("auth.privacy"), t("auth.micDenied"));
         return;
       }
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const recording = new Audio.Recording();
-      await recording.prepareToRecordAsync({
-        // expo-av 16: Android MediaRecorder (AAC/m4a) — no PCM/WAV output.
-        // m4a -> WAV conversion happens on the VPS converter,
-        // mirroring the web app's client-side webm->wav step.
-        android: {
-          extension: ".m4a",
-          outputFormat: Audio.AndroidOutputFormat.DEFAULT,
-          audioEncoder: Audio.AndroidAudioEncoder.AAC,
-          sampleRate: 44100,
-          numberOfChannels: 1,
-          bitRate: 128000,
-        },
-        ios: {
-          extension: ".m4a",
-          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
-          audioQuality: Audio.IOSAudioQuality.HIGH,
-          sampleRate: 44100,
-          numberOfChannels: 1,
-          bitRate: 128000,
-        },
-        web: { mimeType: "audio/mp4" },
-      });
-      recordingRef.current = recording;
+      await recorder.prepareToRecordAsync();
+      recorder.record();
       setIsRecording(true);
       setSeconds(0);
-      await recording.startAsync();
       const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
-      (recording as any).__timer = timer;
+      (recorder as any).__timer = timer;
     } catch (e) {
-      Alert.alert("Error", t("record.recStartError"));
       console.warn("rec start error", e);
+      Alert.alert("Error", t("record.recStartError"));
     }
   };
 
   const stopAndTranscribe = async () => {
-    const rec = recordingRef.current;
-    if (!rec) return;
     try {
-      await rec.stopAndUnloadAsync();
-      const timer = (rec as any).__timer;
+      recorder.stop();
+      const timer = (recorder as any).__timer;
       if (timer) clearInterval(timer);
     } catch {}
-    recordingRef.current = null;
     setIsRecording(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    const uri = rec.getURI();
+    const uri = recorder.uri;
     if (!uri) {
       Alert.alert("Error", t("record.noAudio"));
       return;

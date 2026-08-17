@@ -9,6 +9,8 @@ interface SubscriptionState {
   checked: boolean;
   checkSubscription: () => Promise<void>;
   refresh: () => Promise<void>;
+  /** Local unlock after a successful Play Billing purchase (backend reconcile later). */
+  markPremium: () => void;
 }
 
 /**
@@ -46,5 +48,9 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
   refresh: async () => {
     await get().checkSubscription();
+  },
+
+  markPremium: () => {
+    set({ isPremium: true, checked: true });
   },
 }));

@@ -17,6 +17,9 @@ import EntryDetailScreen from "@/screens/EntryDetailScreen";
 import VoiceScreen from "@/screens/VoiceScreen";
 import GoalsScreen from "@/screens/GoalsScreen";
 import SoulMirrorScreen from "@/screens/SoulMirrorScreen";
+import PrivacyScreen from "@/screens/PrivacyScreen";
+import PricingScreen from "@/screens/PricingScreen";
+import RemindersScreen from "@/screens/RemindersScreen";
 
 export type RootStackParamList = {
   Main: undefined;
@@ -24,6 +27,9 @@ export type RootStackParamList = {
   Voice: undefined;
   Goals: undefined;
   SoulMirror: undefined;
+  Privacy: undefined;
+  Pricing: undefined;
+  Reminders: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -118,6 +124,9 @@ export default function RootNavigator() {
           <Stack.Screen name="Voice" component={VoiceScreen} />
           <Stack.Screen name="Goals" component={GoalsScreen} />
           <Stack.Screen name="SoulMirror" component={SoulMirrorScreen} />
+          <Stack.Screen name="Privacy" component={PrivacyScreen} />
+          <Stack.Screen name="Pricing" component={PricingScreen} />
+          <Stack.Screen name="Reminders" component={RemindersScreen} />
         </Stack.Navigator>
       ) : (
         <AuthScreen />

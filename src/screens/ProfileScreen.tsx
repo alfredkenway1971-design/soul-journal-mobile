@@ -107,11 +107,25 @@ export default function ProfileScreen() {
           <Text style={styles.rowLabel}>{t("profile.voice")}</Text>
           <Text style={styles.rowArrow}>→</Text>
         </Pressable>
-        <Pressable style={[styles.row, shadows.soft]} onPress={() => Alert.alert(t("profile.comingSoon"), "Abonnement — Phase 3 (Google Play).")}>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Pricing")}>
           <View style={styles.rowIcon}>
             <Text style={styles.rowEmoji}>👑</Text>
           </View>
           <Text style={styles.rowLabel}>{t("profile.premium")}</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Reminders")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>🔔</Text>
+          </View>
+          <Text style={styles.rowLabel}>Rappels</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Privacy")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>🔒</Text>
+          </View>
+          <Text style={styles.rowLabel}>{t("profile.privacy")}</Text>
           <Text style={styles.rowArrow}>→</Text>
         </Pressable>
         <Pressable style={[styles.row, shadows.soft]} onPress={() => Alert.alert("Soul Journal", t("profile.version"))}>

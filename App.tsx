@@ -4,7 +4,11 @@ import { useFonts, PlayfairDisplay_600SemiBold, PlayfairDisplay_700Bold } from "
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore } from "@/store/settingsStore";
+import { setupPurchaseListener } from "@/lib/billing";
 import RootNavigator from "@/navigation/RootNavigator";
+
+// Global Play Billing purchase listener — must be set before any purchase
+setupPurchaseListener();
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize);
