@@ -155,15 +155,15 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* AI Insight (web home card, real coaching_insights data) */}
-            {insight && (
-              <View style={[styles.insightCard, shadows.card]}>
-                <View style={styles.insightHeader}>
-                  <Text style={styles.insightBadge}>✨ {t("home.aiInsight")}</Text>
-                </View>
-                <Text style={styles.insightText}>{insight}</Text>
+            {/* AI Insight (web home card — always visible with fallback like the web) */}
+            <View style={[styles.insightCard, shadows.card]}>
+              <View style={styles.insightHeader}>
+                <Text style={styles.insightBadge}>✨ {t("home.aiInsight")}</Text>
               </View>
-            )}
+              <Text style={styles.insightText}>
+                {insight || t("home.aiInsightEmpty")}
+              </Text>
+            </View>
 
             {/* Soul Mirror home card (web has this above Quick Capture) */}
             <Pressable style={[styles.soulMirrorCard, shadows.card]} onPress={() => navigation.navigate("SoulMirror")}>

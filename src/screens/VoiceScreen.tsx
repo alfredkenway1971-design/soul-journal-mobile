@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
@@ -13,9 +13,15 @@ import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
 import UpgradePrompt from "@/components/UpgradePrompt";
+import { LANGUAGES } from "@/i18n/translations";
 
 const CREATE_CLONE_URL = "https://soul-journal-seven.vercel.app/api/create-voice-clone";
-const MIN_RECORD_MS = 10000;
+
+/** One clone per language, stored in the voice_profiles table (same as web). */
+interface VoiceProfile {
+  lang: string;
+  voice_id: string;
+}
 
 export default function VoiceScreen() {
   const navigation = useNavigation();
@@ -29,30 +35,33 @@ export default function VoiceScreen() {
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [voiceId, setVoiceId] = useState<string | null>(null);
+  const [clones, setClones] = useState<VoiceProfile[]>([]);
+  const [targetLang, setTargetLang] = useState<string | null>(null); // null = default clone
+  const [loading, setLoading] = useState(true);
   const playerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
 
   useEffect(() => {
     setAudioModeAsync({ allowsRecording: true });
-    // Pre-request mic permission on screen open (only asks once per install).
     requestRecordingPermissionsAsync().catch(() => {});
     return () => {
       playerRef.current?.remove();
     };
   }, []);
 
-  // Load existing clone id from the profile
-  useEffect(() => {
+  // Load all clones from the voice_profiles table (cross-device, like the web)
+  const loadClones = useCallback(async () => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("voice_clone_id")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.voice_clone_id) setVoiceId(data.voice_clone_id);
-      });
+    const { data } = await supabase
+      .from("voice_profiles")
+      .select("lang, voice_id")
+      .eq("user_id", user.id);
+    setClones((data ?? []) as VoiceProfile[]);
+    setLoading(false);
   }, [user]);
+
+  useEffect(() => {
+    loadClones();
+  }, [loadClones]);
 
   const stopPlayback = async () => {
     const p = playerRef.current;
@@ -138,6 +147,7 @@ export default function VoiceScreen() {
       if (!token) throw new Error("no session");
 
       const email = user.email ?? "user";
+      const langLabel = targetLang ? LANGUAGES.find((l) => l.code === targetLang)?.name ?? targetLang : "";
       const res = await fetch(CREATE_CLONE_URL, {
         method: "POST",
         headers: {
@@ -146,7 +156,7 @@ export default function VoiceScreen() {
         },
         body: JSON.stringify({
           audio: base64,
-          name: `Voice Clone - ${email}`,
+          name: `Voice Clone - ${email}${langLabel ? ` - ${langLabel}` : ""}`,
           audioType: "audio/mp4",
           audioName: "voice_sample.m4a",
         }),
@@ -155,15 +165,25 @@ export default function VoiceScreen() {
       const json = await res.json();
       if (!json?.voiceId) throw new Error("no voiceId");
 
-      // Persist to the profile so playback uses this voice everywhere
+      // Persist to the voice_profiles table (per-language, cross-device)
+      const lang = targetLang ?? "default";
       const { error } = await supabase
-        .from("profiles")
-        .update({ voice_clone_id: json.voiceId })
-        .eq("id", user.id);
+        .from("voice_profiles")
+        .upsert(
+          { user_id: user.id, lang, voice_id: json.voiceId, updated_at: new Date().toISOString() },
+          { onConflict: "user_id,lang" }
+        );
       if (error) throw error;
 
-      setVoiceId(json.voiceId);
+      // Keep the legacy single-clone column in sync for backward compat
+      if (!targetLang) {
+        await supabase.from("profiles").update({ voice_clone_id: json.voiceId }).eq("id", user.id);
+      }
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setRecordedUri(null);
+      setTargetLang(null);
+      await loadClones();
       Alert.alert("✨ Voix créée !", "Votre voix clonée est maintenant utilisée pour la lecture de vos entrées.");
     } catch (e) {
       console.warn("clone error", e);
@@ -172,6 +192,19 @@ export default function VoiceScreen() {
       setCreating(false);
     }
   };
+
+  const removeClone = async (lang: string) => {
+    if (!user) return;
+    await supabase.from("voice_profiles").delete().eq("user_id", user.id).eq("lang", lang);
+    if (lang === "default") {
+      await supabase.from("profiles").update({ voice_clone_id: null }).eq("id", user.id);
+    }
+    await loadClones();
+  };
+
+  const langName = (code: string) => LANGUAGES.find((l) => l.code === code)?.native ?? (code === "default" ? "Défaut" : code);
+  const langFlag = (code: string) => LANGUAGES.find((l) => l.code === code)?.flag ?? "🌍";
+  const clonedLangs = clones.map((c) => c.lang);
 
   return (
     <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
@@ -189,66 +222,99 @@ export default function VoiceScreen() {
             title="La voix clonée est une fonction Premium"
             description="Enregistrez un échantillon de 10 secondes et l'IA reproduit votre voix pour lire vos entrées."
           />
-        ) : voiceId ? (
-          <View style={[styles.statusCard, shadows.card]}>
-            <Text style={styles.statusEmoji}>✅</Text>
-            <Text style={styles.statusTitle}>Voix clonée active</Text>
-            <Text style={styles.statusDesc}>
-              Vos entrées sont lues avec votre voix. Pour changer de voix, enregistrez un nouvel échantillon.
-            </Text>
-          </View>
+        ) : loading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
         ) : (
-          <View style={[styles.statusCard, shadows.card]}>
-            <Text style={styles.statusEmoji}>🎤</Text>
-            <Text style={styles.statusTitle}>Créez votre voix</Text>
-            <Text style={styles.statusDesc}>
-              Enregistrez un échantillon d'au moins 10 secondes. L'IA reproduit votre voix pour lire vos entrées.
-            </Text>
-          </View>
-        )}
-
-        {/* Recording control */}
-        <View style={[styles.recordCard, shadows.card]}>
-          {!isRecording ? (
-            <Pressable style={styles.recordBtn} onPress={recordedUri ? startRecording : startRecording}>
-              <View style={styles.recordCircle}>
-                <Text style={styles.recordIcon}>{recordedUri ? "🔁" : "🎤"}</Text>
+          <>
+            {/* Clone list (per language, from the DB) */}
+            {clones.length > 0 && (
+              <View style={styles.listCard}>
+                <Text style={styles.listTitle}>Mes voix clonées</Text>
+                {clones.map((c) => (
+                  <View key={c.lang} style={[styles.cloneRow, shadows.soft]}>
+                    <Text style={styles.cloneFlag}>{langFlag(c.lang)}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.cloneName}>{langName(c.lang)}</Text>
+                      <Text style={styles.cloneId}>{c.voice_id.slice(0, 8)}…</Text>
+                    </View>
+                    <Pressable
+                      style={styles.reRecordBtn}
+                      onPress={() => { setTargetLang(c.lang); setRecordedUri(null); }}
+                    >
+                      <Text style={styles.reRecordText}>Ré-enregistrer</Text>
+                    </Pressable>
+                    <Pressable onPress={() => removeClone(c.lang)} hitSlop={8} style={{ marginLeft: 10 }}>
+                      <Text style={styles.cloneDelete}>🗑️</Text>
+                    </Pressable>
+                  </View>
+                ))}
               </View>
-              <Text style={styles.recordLabel}>
-                {recordedUri ? "Ré-enregistrer" : t("record.pressToRecord")}
-              </Text>
-            </Pressable>
-          ) : (
-            <Pressable style={styles.recordBtn} onPress={stopRecording}>
-              <View style={[styles.recordCircle, styles.recordCircleActive]}>
-                <Text style={styles.recordIcon}>⏹️</Text>
-              </View>
-              <Text style={styles.recordLabel}>{t("record.stop")} ({seconds}s)</Text>
-            </Pressable>
-          )}
-
-          {recordedUri && !isRecording && (
-            <Pressable style={[styles.playBtn, shadows.soft]} onPress={togglePlay}>
-              <Text style={styles.playBtnText}>{playing ? "⏸ Arrêter" : "▶️ Écouter l'échantillon"}</Text>
-            </Pressable>
-          )}
-        </View>
-
-        {/* Create button */}
-        {recordedUri && !isRecording && (
-          <Pressable style={[styles.createBtn, shadows.soft, creating && { opacity: 0.6 }]} onPress={createClone} disabled={creating}>
-            {creating ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Text style={styles.createBtnText}>✨ Créer ma voix clonée</Text>
             )}
-          </Pressable>
-        )}
 
-        {creating && (
-          <Text style={styles.creatingHint}>
-            Quelques secondes… Fish Audio entraîne le modèle (gratuit).
-          </Text>
+            {/* Language target chips (add a voice in another language) */}
+            <Text style={styles.sectionLabel}>Ajouter une voix dans une langue</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.langRow}>
+              {LANGUAGES.map((l) => {
+                const has = clonedLangs.includes(l.code);
+                const active = targetLang === l.code;
+                return (
+                  <Pressable
+                    key={l.code}
+                    style={[styles.langChip, has && styles.langChipDone, active && styles.langChipActive]}
+                    onPress={() => { setTargetLang(active ? null : l.code); setRecordedUri(null); }}
+                  >
+                    <Text style={styles.langChipText}>{l.flag} {l.native} {has ? "✓" : ""}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            {/* Recording control */}
+            <View style={[styles.recordCard, shadows.card]}>
+              {!isRecording ? (
+                <Pressable style={styles.recordBtn} onPress={startRecording}>
+                  <View style={styles.recordCircle}>
+                    <Text style={styles.recordIcon}>{recordedUri ? "🔁" : "🎤"}</Text>
+                  </View>
+                  <Text style={styles.recordLabel}>
+                    {recordedUri ? "Ré-enregistrer" : t("record.pressToRecord")}
+                  </Text>
+                </Pressable>
+              ) : (
+                <Pressable style={styles.recordBtn} onPress={stopRecording}>
+                  <View style={[styles.recordCircle, styles.recordCircleActive]}>
+                    <Text style={styles.recordIcon}>⏹️</Text>
+                  </View>
+                  <Text style={styles.recordLabel}>{t("record.stop")} ({seconds}s)</Text>
+                </Pressable>
+              )}
+
+              {recordedUri && !isRecording && (
+                <Pressable style={[styles.playBtn, shadows.soft]} onPress={togglePlay}>
+                  <Text style={styles.playBtnText}>{playing ? "⏸ Arrêter" : "▶️ Écouter l'échantillon"}</Text>
+                </Pressable>
+              )}
+            </View>
+
+            {/* Create button */}
+            {recordedUri && !isRecording && (
+              <Pressable style={[styles.createBtn, shadows.soft, creating && { opacity: 0.6 }]} onPress={createClone} disabled={creating}>
+                {creating ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.createBtnText}>
+                    ✨ Créer ma voix clonée{targetLang ? ` (${langName(targetLang)})` : ""}
+                  </Text>
+                )}
+              </Pressable>
+            )}
+
+            {creating && (
+              <Text style={styles.creatingHint}>
+                Quelques secondes… Fish Audio entraîne le modèle (gratuit).
+              </Text>
+            )}
+          </>
         )}
       </ScrollView>
     </LinearGradient>
@@ -271,15 +337,44 @@ const styles = StyleSheet.create({
   },
   iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
   headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
-  statusCard: {
+  listCard: {
     ...glassCard,
-    padding: 20,
-    alignItems: "center",
+    padding: 16,
     marginBottom: 16,
   },
-  statusEmoji: { fontSize: 34, marginBottom: 8 },
-  statusTitle: { fontSize: 17, color: colors.text, fontFamily: fonts.display, textAlign: "center" },
-  statusDesc: { fontSize: 13, color: colors.textMuted, marginTop: 6, textAlign: "center", lineHeight: 19, fontFamily: fonts.body },
+  listTitle: { fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold, marginBottom: 10 },
+  cloneRow: {
+    ...glassCard,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    marginBottom: 8,
+  },
+  cloneFlag: { fontSize: 22, marginRight: 12 },
+  cloneName: { fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold },
+  cloneId: { fontSize: 11, color: colors.textFaint, marginTop: 2, fontFamily: fonts.body },
+  reRecordBtn: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  reRecordText: { fontSize: 12, color: colors.primary, fontFamily: fonts.bodySemiBold },
+  cloneDelete: { fontSize: 16 },
+  sectionLabel: { fontSize: 13, color: colors.textMuted, marginTop: 4, marginBottom: 8, fontFamily: fonts.bodySemiBold },
+  langRow: { flexDirection: "row", marginBottom: 16 },
+  langChip: {
+    backgroundColor: colors.cardGlass,
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+  },
+  langChipDone: { backgroundColor: colors.primaryLight },
+  langChipActive: { borderColor: colors.primary, backgroundColor: colors.white },
+  langChipText: { fontSize: 12, color: colors.text, fontFamily: fonts.bodyMedium },
   recordCard: {
     ...glassCard,
     padding: 24,

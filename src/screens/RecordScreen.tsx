@@ -251,6 +251,13 @@ export default function RecordScreen() {
           </View>
         )}
 
+        {/* Always-visible trigger when no prompts are loaded yet */}
+        {prompts.length === 0 && !promptsLoading && (
+          <Pressable style={styles.promptTrigger} onPress={loadPrompts} disabled={promptsLoading}>
+            <Text style={styles.promptTriggerText}>✨ {t("record.promptsTitle")}</Text>
+          </Pressable>
+        )}
+
         {/* Mood */}
         <Text style={styles.sectionLabel}>{t("record.howFeel")}</Text>
         <View style={styles.moodRow}>
@@ -351,6 +358,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   promptText: { fontSize: 13, color: colors.text, lineHeight: 19, fontFamily: fonts.body },
+  promptTrigger: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.input,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(29,129,237,0.2)",
+  },
+  promptTriggerText: { fontSize: 13, color: colors.primary, fontFamily: fonts.bodySemiBold },
   moodRow: { flexDirection: "row", gap: 8, flexWrap: "wrap", marginBottom: 24 },
   moodChip: {
     backgroundColor: colors.cardGlass,
