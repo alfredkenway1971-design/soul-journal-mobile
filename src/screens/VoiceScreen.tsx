@@ -11,6 +11,8 @@ import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
+import { useSubscriptionStore } from "@/store/subscriptionStore";
+import UpgradePrompt from "@/components/UpgradePrompt";
 
 const CREATE_CLONE_URL = "https://soul-journal-seven.vercel.app/api/create-voice-clone";
 const MIN_RECORD_MS = 10000;
@@ -19,6 +21,7 @@ export default function VoiceScreen() {
   const navigation = useNavigation();
   const user = useAuthStore((s) => s.user);
   const t = useT();
+  const isPremium = useSubscriptionStore((s) => s.isPremium);
 
   const recordingRef = useRef<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -201,7 +204,12 @@ export default function VoiceScreen() {
           <View style={{ width: 40 }} />
         </View>
 
-        {voiceId ? (
+        {!isPremium ? (
+          <UpgradePrompt
+            title="La voix clonée est une fonction Premium"
+            description="Enregistrez un échantillon de 10 secondes et l'IA reproduit votre voix pour lire vos entrées."
+          />
+        ) : voiceId ? (
           <View style={[styles.statusCard, shadows.card]}>
             <Text style={styles.statusEmoji}>✅</Text>
             <Text style={styles.statusTitle}>Voix clonée active</Text>

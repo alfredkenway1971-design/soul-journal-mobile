@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -6,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
+import { useSubscriptionStore } from "@/store/subscriptionStore";
 import AuthScreen from "@/screens/AuthScreen";
 import HomeScreen from "@/screens/HomeScreen";
 import RecordScreen from "@/screens/RecordScreen";
@@ -95,6 +97,12 @@ function MainTabs() {
 export default function RootNavigator() {
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
+  const checkSubscription = useSubscriptionStore((s) => s.checkSubscription);
+
+  // Re-check premium status whenever the user changes
+  useEffect(() => {
+    if (user) checkSubscription();
+  }, [user, checkSubscription]);
 
   if (loading) {
     return null; // splash shows while session restores

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors, fonts, glassCard, shadows } from "@/theme";
+import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore, useT } from "@/store/settingsStore";
+import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { LANGUAGES } from "@/i18n/translations";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -16,6 +17,7 @@ export default function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const language = useSettingsStore((s) => s.language);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
+  const isPremium = useSubscriptionStore((s) => s.isPremium);
   const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
@@ -55,6 +57,11 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.name}>{displayName || "Soul Journal"}</Text>
           <Text style={styles.email}>{user?.email}</Text>
+          {isPremium && (
+            <View style={styles.premiumBadge}>
+              <Text style={styles.premiumBadgeText}>👑 Premium</Text>
+            </View>
+          )}
         </View>
 
         {/* Language switcher */}
@@ -152,6 +159,14 @@ const styles = StyleSheet.create({
   avatarText: { color: colors.white, fontSize: 22, fontWeight: "700", fontFamily: fonts.bodyBold },
   name: { fontSize: 20, color: colors.text, fontFamily: fonts.displayBold },
   email: { fontSize: 13, color: colors.textMuted, marginTop: 4, fontFamily: fonts.body },
+  premiumBadge: {
+    marginTop: 10,
+    backgroundColor: "#fef3c7",
+    borderRadius: radius.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+  },
+  premiumBadgeText: { fontSize: 12, color: "#b45309", fontFamily: fonts.bodySemiBold },
   sectionLabel: { fontSize: 13, color: colors.textMuted, marginTop: 8, marginBottom: 8, fontFamily: fonts.bodySemiBold },
   langCard: {
     ...glassCard,

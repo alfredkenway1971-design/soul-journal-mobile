@@ -9,6 +9,8 @@ import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT, useSettingsStore } from "@/store/settingsStore";
+import { useSubscriptionStore } from "@/store/subscriptionStore";
+import UpgradePrompt from "@/components/UpgradePrompt";
 
 const SOUL_MIRROR_URL = "https://soul-journal-seven.vercel.app/api/soul-mirror";
 
@@ -32,6 +34,7 @@ export default function SoulMirrorScreen() {
   const user = useAuthStore((s) => s.user);
   const t = useT();
   const language = useSettingsLang();
+  const isPremium = useSubscriptionStore((s) => s.isPremium);
 
   const [months, setMonths] = useState<string[]>([]);
   const [selected, setSelected] = useState<string>("");
@@ -124,8 +127,8 @@ export default function SoulMirrorScreen() {
   }, [user, selected, cacheKey, language]);
 
   useEffect(() => {
-    if (selected) generate();
-  }, [selected, generate]);
+    if (selected && isPremium) generate();
+  }, [selected, generate, isPremium]);
 
   const moods = portrait?.emotionalSummary?.dominantMoods ?? [];
 
@@ -159,7 +162,13 @@ export default function SoulMirrorScreen() {
           })}
         </ScrollView>
 
-        {loading ? (
+        {/* Premium gate */}
+        {!isPremium ? (
+          <UpgradePrompt
+            title="Soul Mirror est une fonction Premium"
+            description="Découvrez votre portrait mensuel — émotions dominantes, schémas cachés, sources de joie et domaine de croissance."
+          />
+        ) : loading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator color={colors.primary} size="large" />
             <Text style={styles.loadingText}>Création de votre portrait…</Text>
