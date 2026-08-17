@@ -1,5 +1,6 @@
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts } from "@/theme";
@@ -9,8 +10,15 @@ import HomeScreen from "@/screens/HomeScreen";
 import RecordScreen from "@/screens/RecordScreen";
 import LibraryScreen from "@/screens/LibraryScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
+import EntryDetailScreen from "@/screens/EntryDetailScreen";
+
+export type RootStackParamList = {
+  Main: undefined;
+  EntryDetail: { id: string };
+};
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const navTheme = {
   ...DefaultTheme,
@@ -87,7 +95,14 @@ export default function RootNavigator() {
   return (
     <NavigationContainer theme={navTheme}>
       <StatusBar style="dark" />
-      {user ? <MainTabs /> : <AuthScreen />}
+      {user ? (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
+        </Stack.Navigator>
+      ) : (
+        <AuthScreen />
+      )}
     </NavigationContainer>
   );
 }

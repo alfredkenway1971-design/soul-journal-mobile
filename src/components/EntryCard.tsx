@@ -1,6 +1,9 @@
 import { memo } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { colors, fonts, glassCard, shadows } from "@/theme";
+import type { RootStackParamList } from "@/navigation/RootNavigator";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 const MOOD_EMOJI: Record<string, string> = {
   happy: "😊",
@@ -24,8 +27,13 @@ const fmtDate = (iso: string) => {
 };
 
 export default memo(function EntryCard({ entry }: Props) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   return (
-    <View style={[styles.card, shadows.soft]}>
+    <Pressable
+      style={({ pressed }) => [styles.card, shadows.soft, pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] }]}
+      onPress={() => navigation.navigate("EntryDetail", { id: entry.id })}
+    >
       <Text style={styles.date}>{fmtDate(entry.created_at)}</Text>
       <View style={styles.row}>
         <Text style={styles.title} numberOfLines={2}>
@@ -33,7 +41,7 @@ export default memo(function EntryCard({ entry }: Props) {
         </Text>
         <Text style={styles.mood}>{MOOD_EMOJI[entry.mood ?? ""] ?? "📝"}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 });
 
