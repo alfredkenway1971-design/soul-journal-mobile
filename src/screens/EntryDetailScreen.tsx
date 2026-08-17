@@ -113,6 +113,15 @@ export default function EntryDetailScreen() {
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("no session");
 
+      // Use the user's cloned voice when available (stored as dashed UUID on the profile)
+      let voiceId: string | null = null;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("voice_clone_id")
+        .eq("id", user!.id)
+        .maybeSingle();
+      if (profile?.voice_clone_id) voiceId = profile.voice_clone_id;
+
       const res = await fetch(GENERATE_VOICE_URL, {
         method: "POST",
         headers: {
@@ -121,7 +130,7 @@ export default function EntryDetailScreen() {
         },
         body: JSON.stringify({
           text,
-          voiceId: "default",
+          voiceId: voiceId ?? "default",
           language: entry.playback_language || entry.detected_language || undefined,
         }),
       });

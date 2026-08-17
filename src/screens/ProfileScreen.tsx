@@ -6,10 +6,14 @@ import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore, useT } from "@/store/settingsStore";
 import { LANGUAGES } from "@/i18n/translations";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "@/navigation/RootNavigator";
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const t = useT();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const language = useSettingsStore((s) => s.language);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
   const [displayName, setDisplayName] = useState("");
@@ -82,7 +86,7 @@ export default function ProfileScreen() {
           <Text style={styles.rowLabel}>{t("profile.objectives")}</Text>
           <Text style={styles.rowArrow}>→</Text>
         </Pressable>
-        <Pressable style={[styles.row, shadows.soft]} onPress={() => Alert.alert(t("profile.comingSoon"), "Voix clonée — Phase 2.")}>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Voice")}>
           <View style={styles.rowIcon}>
             <Text style={styles.rowEmoji}>🎙️</Text>
           </View>
