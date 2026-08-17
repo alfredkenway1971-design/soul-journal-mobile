@@ -5,9 +5,11 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Audio } from "expo-av";
 import * as Haptics from "expo-haptics";
+import * as FileSystem from "expo-file-system/legacy";
 import { colors, radius } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
+import { useSettingsStore } from "@/store/settingsStore";
 
 const MOODS = [
   { key: "happy", label: "Heureux", emoji: "😊", score: 5 },
@@ -19,11 +21,13 @@ const MOODS = [
 
 export default function RecordScreen() {
   const user = useAuthStore((s) => s.user);
+  const language = useSettingsStore((s) => s.language);
   const recordingRef = useRef<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [text, setText] = useState("");
+  const [detectedLang, setDetectedLang] = useState<string | null>(null);
   const [mood, setMood] = useState<string>("fine");
   const [saving, setSaving] = useState(false);
 
@@ -99,25 +103,24 @@ export default function RecordScreen() {
     }
     setIsTranscribing(true);
     try {
-      const blob = await (await fetch(uri)).blob();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          resolve(result.split(",")[1] ?? result);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
+      // RN fetch() cannot read file:// URIs on Android — read base64 via
+      // expo-file-system instead of fetch(uri).blob() + FileReader.
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
       });
 
       // Same contract as the web app: Supabase edge fn -> VPS Whisper.
       const { data, error } = await supabase.functions.invoke("transcribe-audio", {
-        body: { audio: base64, language: "fr" },
+        body: { audio: base64, language },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
-      if (data?.text) setText((prev) => (prev ? prev + "\n" : "") + data.text.trim());
-      else Alert.alert("Transcription", "Aucun texte détecté. Réessayez.");
+      if (data?.text) {
+        setText((prev) => (prev ? prev + "\n" : "") + data.text.trim());
+        // The edge fn returns the detected spoken language — use it so the
+        // entry is labelled correctly (e.g. English spoken inside a French app).
+        if (data?.language) setDetectedLang(data.language);
+      } else Alert.alert("Transcription", "Aucun texte détecté. Réessayez.");
     } catch (e) {
       console.warn("transcribe error", e);
       Alert.alert("Transcription échouée", "Veuillez réessayer ou écrire votre réponse.");
@@ -145,7 +148,7 @@ export default function RecordScreen() {
         original_transcription: content,
         mood,
         mood_score: moodObj.score,
-        detected_language: "fr",
+        detected_language: detectedLang ?? language,
         created_at: new Date().toISOString(),
       });
       if (error) throw error;
