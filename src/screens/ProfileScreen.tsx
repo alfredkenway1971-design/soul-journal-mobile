@@ -86,6 +86,13 @@ export default function ProfileScreen() {
           <Text style={styles.rowLabel}>{t("profile.objectives")}</Text>
           <Text style={styles.rowArrow}>→</Text>
         </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("SoulMirror")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>🪞</Text>
+          </View>
+          <Text style={styles.rowLabel}>Soul Mirror</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
         <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Voice")}>
           <View style={styles.rowIcon}>
             <Text style={styles.rowEmoji}>🎙️</Text>
