@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors, radius } from "@/theme";
+import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
 import { signInWithGoogle } from "@/lib/oauth";
 
@@ -34,7 +34,7 @@ export default function AuthScreen() {
   };
 
   return (
-    <LinearGradient colors={[colors.bgTop, colors.bgBottom]} style={styles.root}>
+    <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <Text style={styles.logo}>✨ Soul Journal</Text>
@@ -42,11 +42,11 @@ export default function AuthScreen() {
             Votre journal guidé par l'IA — parlez, écrivez, et découvrez qui vous êtes.
           </Text>
 
-          <View style={styles.card}>
+          <View style={[styles.card, shadows.card]}>
             <Text style={styles.title}>{isLogin ? "Connexion" : "Créer un compte"}</Text>
 
             <TextInput
-              style={styles.input}
+              style={[styles.input, shadows.soft]}
               placeholder="Email"
               placeholderTextColor={colors.textFaint}
               autoCapitalize="none"
@@ -55,7 +55,7 @@ export default function AuthScreen() {
               onChangeText={setEmail}
             />
             <TextInput
-              style={styles.input}
+              style={[styles.input, shadows.soft]}
               placeholder="Mot de passe"
               placeholderTextColor={colors.textFaint}
               secureTextEntry
@@ -64,7 +64,7 @@ export default function AuthScreen() {
             />
 
             <Pressable
-              style={[styles.button, busy && { opacity: 0.6 }]}
+              style={[styles.button, shadows.soft, busy && { opacity: 0.6 }]}
               onPress={submit}
               disabled={busy}
             >
@@ -72,7 +72,7 @@ export default function AuthScreen() {
             </Pressable>
 
             <Pressable
-              style={[styles.googleButton, busy && { opacity: 0.6 }]}
+              style={[styles.googleButton, shadows.soft, busy && { opacity: 0.6 }]}
               onPress={async () => {
                 setBusy(true);
                 const error = await signInWithGoogle();
@@ -103,16 +103,31 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   container: { flexGrow: 1, justifyContent: "center", padding: 24 },
-  logo: { fontSize: 34, fontWeight: "700", color: colors.primary, textAlign: "center" },
-  tagline: { fontSize: 15, color: colors.textMuted, textAlign: "center", marginTop: 8, marginBottom: 32, lineHeight: 22 },
-  card: {
-    backgroundColor: colors.cardGlass,
-    borderRadius: radius.card,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.7)",
+  logo: {
+    fontSize: 34,
+    color: colors.primary,
+    textAlign: "center",
+    fontFamily: fonts.displayBold,
   },
-  title: { fontSize: 20, fontWeight: "600", color: colors.text, marginBottom: 16 },
+  tagline: {
+    fontSize: 15,
+    color: colors.textMuted,
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 32,
+    lineHeight: 22,
+    fontFamily: fonts.body,
+  },
+  card: {
+    ...glassCard,
+    padding: 24,
+  },
+  title: {
+    fontSize: 20,
+    color: colors.text,
+    marginBottom: 16,
+    fontFamily: fonts.display,
+  },
   input: {
     backgroundColor: colors.white,
     borderRadius: radius.input,
@@ -122,7 +137,8 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
+    fontFamily: fonts.body,
   },
   button: {
     backgroundColor: colors.primary,
@@ -131,7 +147,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 4,
   },
-  buttonText: { color: colors.white, fontSize: 16, fontWeight: "700" },
+  buttonText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: fonts.bodyBold },
   googleButton: {
     backgroundColor: colors.white,
     borderRadius: radius.input,
@@ -139,9 +155,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
-  googleText: { color: colors.text, fontSize: 15, fontWeight: "600" },
-  switchText: { color: colors.primary, textAlign: "center", fontSize: 14, fontWeight: "600" },
-  footnote: { color: colors.textFaint, textAlign: "center", marginTop: 24, fontSize: 12 },
+  googleText: { color: colors.text, fontSize: 15, fontWeight: "600", fontFamily: fonts.bodySemiBold },
+  switchText: { color: colors.primary, textAlign: "center", fontSize: 14, fontWeight: "600", fontFamily: fonts.bodySemiBold },
+  footnote: { color: colors.textFaint, textAlign: "center", marginTop: 24, fontSize: 12, fontFamily: fonts.body },
 });

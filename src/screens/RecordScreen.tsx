@@ -6,17 +6,17 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Audio } from "expo-av";
 import * as Haptics from "expo-haptics";
 import * as FileSystem from "expo-file-system/legacy";
-import { colors, radius } from "@/theme";
+import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore } from "@/store/settingsStore";
 
 const MOODS = [
-  { key: "happy", label: "Heureux", emoji: "😊", score: 5 },
-  { key: "good", label: "Reconnaissant", emoji: "😇", score: 4 },
-  { key: "fine", label: "Paisible", emoji: "😌", score: 3 },
-  { key: "sad", label: "Triste", emoji: "😔", score: 2 },
-  { key: "unhappy", label: "Mal", emoji: "😢", score: 1 },
+  { key: "happy", label: "Heureux", emoji: "😊", score: 5, color: colors.mood.happy },
+  { key: "good", label: "Reconnaissant", emoji: "😇", score: 4, color: colors.mood.good },
+  { key: "fine", label: "Paisible", emoji: "😌", score: 3, color: colors.mood.fine },
+  { key: "sad", label: "Triste", emoji: "😔", score: 2, color: colors.mood.sad },
+  { key: "unhappy", label: "Mal", emoji: "😢", score: 1, color: colors.mood.unhappy },
 ];
 
 export default function RecordScreen() {
@@ -51,7 +51,7 @@ export default function RecordScreen() {
       const recording = new Audio.Recording();
       await recording.prepareToRecordAsync({
         // expo-av 16: Android MediaRecorder (AAC/m4a) — no PCM/WAV output.
-        // m4a -> WAV conversion happens on the VPS converter (Phase 1.5),
+        // m4a -> WAV conversion happens on the VPS converter,
         // mirroring the web app's client-side webm->wav step.
         android: {
           extension: ".m4a",
@@ -76,7 +76,6 @@ export default function RecordScreen() {
       setSeconds(0);
       await recording.startAsync();
       const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
-      // keep a handle so stopAndTranscribe can clear it
       (recording as any).__timer = timer;
     } catch (e) {
       Alert.alert("Erreur", "Impossible de démarrer l'enregistrement.");
@@ -103,13 +102,10 @@ export default function RecordScreen() {
     }
     setIsTranscribing(true);
     try {
-      // RN fetch() cannot read file:// URIs on Android — read base64 via
-      // expo-file-system instead of fetch(uri).blob() + FileReader.
       const base64 = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      // Same contract as the web app: Supabase edge fn -> VPS Whisper.
       const { data, error } = await supabase.functions.invoke("transcribe-audio", {
         body: { audio: base64, language },
       });
@@ -117,8 +113,6 @@ export default function RecordScreen() {
       if (data?.error) throw new Error(data.error);
       if (data?.text) {
         setText((prev) => (prev ? prev + "\n" : "") + data.text.trim());
-        // The edge fn returns the detected spoken language — use it so the
-        // entry is labelled correctly (e.g. English spoken inside a French app).
         if (data?.language) setDetectedLang(data.language);
       } else Alert.alert("Transcription", "Aucun texte détecté. Réessayez.");
     } catch (e) {
@@ -165,21 +159,25 @@ export default function RecordScreen() {
   };
 
   return (
-    <LinearGradient colors={[colors.bgTop, colors.bgBottom]} style={styles.root}>
+    <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>🎙️ Nouvelle entrée</Text>
         <Text style={styles.subtitle}>Parlez ou écrivez — comme vous préférez.</Text>
 
         {/* Voice recording */}
-        <View style={styles.card}>
+        <View style={[styles.card, shadows.card]}>
           {!isRecording ? (
             <Pressable style={[styles.micButton, isTranscribing && { opacity: 0.5 }]} onPress={startRecording} disabled={isTranscribing}>
-              <Text style={styles.micIcon}>🎤</Text>
+              <View style={styles.micCircle}>
+                <Text style={styles.micIcon}>🎤</Text>
+              </View>
               <Text style={styles.micLabel}>{isTranscribing ? "Transcription en cours…" : "Appuyez pour enregistrer"}</Text>
             </Pressable>
           ) : (
             <Pressable style={[styles.micButton, styles.micActive]} onPress={stopAndTranscribe}>
-              <Text style={styles.micIcon}>⏹️</Text>
+              <View style={[styles.micCircle, styles.micCircleActive]}>
+                <Text style={styles.micIcon}>⏹️</Text>
+              </View>
               <Text style={styles.micLabel}>Arrêter ({seconds}s)</Text>
             </Pressable>
           )}
@@ -188,7 +186,7 @@ export default function RecordScreen() {
 
         {/* Text area */}
         <TextInput
-          style={styles.textInput}
+          style={[styles.textInput, shadows.soft]}
           placeholder="Ou tapez votre réponse ici…"
           placeholderTextColor={colors.textFaint}
           multiline
@@ -200,21 +198,25 @@ export default function RecordScreen() {
         {/* Mood */}
         <Text style={styles.sectionLabel}>Comment vous sentez-vous ?</Text>
         <View style={styles.moodRow}>
-          {MOODS.map((m) => (
-            <Pressable
-              key={m.key}
-              onPress={() => setMood(m.key)}
-              style={[styles.moodChip, mood === m.key && styles.moodChipActive]}
-            >
-              <Text style={styles.moodEmoji}>{m.emoji}</Text>
-              <Text style={[styles.moodLabel, mood === m.key && { color: colors.primary, fontWeight: "700" }]}>
-                {m.label}
-              </Text>
-            </Pressable>
-          ))}
+          {MOODS.map((m) => {
+            const active = mood === m.key;
+            return (
+              <Pressable
+                key={m.key}
+                onPress={() => setMood(m.key)}
+                style={[styles.moodChip, shadows.soft, active && { borderColor: m.color, backgroundColor: colors.white }]}
+              >
+                <Text style={styles.moodEmoji}>{m.emoji}</Text>
+                <Text style={[styles.moodLabel, active && { color: m.color, fontWeight: "700" }]}>
+                  {m.label}
+                </Text>
+                {active && <View style={[styles.moodDot, { backgroundColor: m.color }]} />}
+              </Pressable>
+            );
+          })}
         </View>
 
-        <Pressable style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={saveEntry} disabled={saving}>
+        <Pressable style={[styles.saveButton, shadows.soft, saving && { opacity: 0.6 }]} onPress={saveEntry} disabled={saving}>
           <Text style={styles.saveText}>{saving ? "Enregistrement…" : "Enregistrer ✨"}</Text>
         </Pressable>
       </ScrollView>
@@ -224,60 +226,73 @@ export default function RecordScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { padding: 20, paddingBottom: 100 },
-  title: { fontSize: 26, fontWeight: "700", color: colors.text },
-  subtitle: { fontSize: 14, color: colors.textMuted, marginTop: 4, marginBottom: 20 },
+  content: { padding: 20, paddingBottom: 110 },
+  title: {
+    fontSize: 26,
+    color: colors.text,
+    fontFamily: fonts.displayBold,
+  },
+  subtitle: { fontSize: 14, color: colors.textMuted, marginTop: 4, marginBottom: 20, fontFamily: fonts.body },
   card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.card,
+    ...glassCard,
     padding: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
     alignItems: "center",
   },
   micButton: {
-    backgroundColor: colors.primaryLight,
     borderRadius: 999,
-    paddingVertical: 26,
-    paddingHorizontal: 40,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
     alignItems: "center",
     width: "100%",
   },
-  micActive: { backgroundColor: "#fee2e2" },
-  micIcon: { fontSize: 34 },
-  micLabel: { fontSize: 15, fontWeight: "600", color: colors.text, marginTop: 6 },
+  micCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 999,
+    backgroundColor: colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: "rgba(29,129,237,0.25)",
+  },
+  micCircleActive: { backgroundColor: "#fee2e2", borderColor: "rgba(239,68,68,0.35)" },
+  micActive: {},
+  micIcon: { fontSize: 32 },
+  micLabel: { fontSize: 15, color: colors.text, marginTop: 2, fontFamily: fonts.bodySemiBold },
   textInput: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.cardGlassStrong,
     borderRadius: radius.card,
     padding: 16,
     minHeight: 140,
     fontSize: 16,
     color: colors.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     marginTop: 16,
     marginBottom: 20,
+    fontFamily: fonts.body,
   },
-  sectionLabel: { fontSize: 14, fontWeight: "600", color: colors.text, marginBottom: 10 },
+  sectionLabel: { fontSize: 14, color: colors.text, marginBottom: 10, fontFamily: fonts.bodySemiBold },
   moodRow: { flexDirection: "row", gap: 8, flexWrap: "wrap", marginBottom: 24 },
   moodChip: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.cardGlass,
     borderRadius: radius.pill,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     alignItems: "center",
     minWidth: 64,
   },
-  moodChipActive: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
   moodEmoji: { fontSize: 20 },
-  moodLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  moodLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
+  moodDot: { width: 5, height: 5, borderRadius: 999, marginTop: 4 },
   saveButton: {
     backgroundColor: colors.primary,
     borderRadius: radius.input,
     paddingVertical: 16,
     alignItems: "center",
   },
-  saveText: { color: colors.white, fontSize: 16, fontWeight: "700" },
+  saveText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: fonts.bodyBold },
 });

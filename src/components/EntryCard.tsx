@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { colors, radius } from "@/theme";
+import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 
 const MOOD_EMOJI: Record<string, string> = {
   happy: "😊",
@@ -25,7 +25,7 @@ const fmtDate = (iso: string) => {
 
 export default memo(function EntryCard({ entry }: Props) {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, shadows.soft]}>
       <Text style={styles.date}>{fmtDate(entry.created_at)}</Text>
       <View style={styles.row}>
         <Text style={styles.title} numberOfLines={2}>
@@ -39,15 +39,24 @@ export default memo(function EntryCard({ entry }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.card,
+    ...glassCard,
     padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
     marginBottom: 10,
   },
-  date: { fontSize: 12, color: colors.textFaint, marginBottom: 6 },
+  date: {
+    fontSize: 12,
+    color: colors.textFaint,
+    marginBottom: 6,
+    fontFamily: fonts.bodyMedium,
+  },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title: { fontSize: 15, fontWeight: "600", color: colors.text, flex: 1, paddingRight: 8 },
+  title: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.text,
+    flex: 1,
+    paddingRight: 8,
+    fontFamily: fonts.bodySemiBold,
+  },
   mood: { fontSize: 20 },
 });

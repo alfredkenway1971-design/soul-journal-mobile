@@ -1,33 +1,58 @@
 /**
- * Soul Journal design tokens — light/emerald identity (matches the web app).
- * Light/white only. NO dark navy / purple.
+ * Soul Journal design tokens — SKY-BLUE GLASSMORPHIC (matches the web app).
+ * Light/white only. NO dark navy / purple / emerald.
+ * Palette mirrors the web app's index.css HSL tokens (converted to hex):
+ *   --background: 205 70% 88%  |  --primary: 211 85% 52%  |  gradient-cream: 200/75/90 → 210/70/82 → 205/65/86
  */
 export const colors = {
-  primary: "#059669", // emerald
-  primarySoft: "#10b981",
-  primaryLight: "#d1fae5",
-  accent: "#0ea5e9", // soft sky for secondary actions
-  bgTop: "#e0f2fe", // soft blue-green gradient top
-  bgBottom: "#d1fae5", // soft green gradient bottom
+  // Primary — ocean blue (web --primary: hsl(211 85% 52%))
+  primary: "#1d81ed",
+  primarySoft: "#3db8f5",
+  primaryLight: "#e0f2fe",
+  // Background gradient (web --gradient-cream)
+  bgTop: "#d2ecf9",
+  bgMid: "#b1d1f1",
+  bgBottom: "#c4dff3",
+  // Cards — frosted white glass (web .glass-premium)
   card: "#ffffff",
-  cardGlass: "rgba(255,255,255,0.75)",
-  text: "#1f2937",
-  textMuted: "#6b7280",
-  textFaint: "#9ca3af",
-  border: "#e5e7eb",
-  amber: "#f59e0b",
+  cardGlass: "rgba(255,255,255,0.68)",
+  cardGlassStrong: "rgba(255,255,255,0.8)",
+  // Text
+  text: "#192434", // web --foreground hsl(215 35% 15%)
+  textMuted: "#52637a", // web --muted-foreground hsl(215 20% 40%)
+  textFaint: "#8ba0b8",
+  // Borders / hairline — tinted sky (web --border hsl(205 40% 85%), glass border hsl(215 40% 78% / 0.5))
+  border: "#c9dbe8",
+  glassBorder: "rgba(173,196,220,0.55)",
+  // Accents
+  accent: "#3db8f5",
+  amber: "#fabd2e",
   amberLight: "#fef3c7",
   danger: "#ef4444",
   white: "#ffffff",
+  // Mood colors (web sentiment tokens)
+  mood: {
+    happy: "#fabd2e", // hsl(42 95% 58%)
+    good: "#fabd2e",
+    fine: "#4296f0", // hsl(211 85% 60%)
+    calm: "#5ebeed", // hsl(200 80% 65%)
+    sad: "#db7082", // hsl(350 60% 65%)
+    anxious: "#b48ae0",
+    unhappy: "#db7082",
+  },
 };
 
 export const fonts = {
-  display: "System", // cursive display font added in a polish pass (expo-google-fonts)
-  body: "System",
+  display: "PlayfairDisplay_600SemiBold",
+  displayBold: "PlayfairDisplay_700Bold",
+  body: "Inter_400Regular",
+  bodyMedium: "Inter_500Medium",
+  bodySemiBold: "Inter_600SemiBold",
+  bodyBold: "Inter_700Bold",
 };
 
 export const radius = {
-  card: 20,
+  card: 24, // web rounded-2xl / 1.5rem
   pill: 999,
   input: 14,
 };
@@ -37,3 +62,30 @@ export const spacing = {
   card: 16,
   gap: 12,
 };
+
+export const shadows = {
+  // web .glass-premium shadow: 0 10px 30px -10px hsl(215 50% 25% / 0.25), inset highlight
+  card: {
+    shadowColor: "rgba(26,63,110,0.22)",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 1,
+    shadowRadius: 24,
+    elevation: 6,
+  },
+  soft: {
+    shadowColor: "rgba(26,63,110,0.12)",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 14,
+    elevation: 3,
+  },
+};
+
+/** Web .glass-premium card recipe — frosted white, tinted hairline, soft sky shadow. */
+export const glassCard = {
+  backgroundColor: colors.cardGlass,
+  borderRadius: radius.card,
+  borderWidth: 1,
+  borderColor: colors.glassBorder,
+  ...shadows.card,
+} as const;
