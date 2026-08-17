@@ -9,19 +9,20 @@ import * as FileSystem from "expo-file-system/legacy";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
-import { useSettingsStore } from "@/store/settingsStore";
+import { useSettingsStore, useT } from "@/store/settingsStore";
 
 const MOODS = [
-  { key: "happy", label: "Heureux", emoji: "😊", score: 5, color: colors.mood.happy },
-  { key: "good", label: "Reconnaissant", emoji: "😇", score: 4, color: colors.mood.good },
-  { key: "fine", label: "Paisible", emoji: "😌", score: 3, color: colors.mood.fine },
-  { key: "sad", label: "Triste", emoji: "😔", score: 2, color: colors.mood.sad },
-  { key: "unhappy", label: "Mal", emoji: "😢", score: 1, color: colors.mood.unhappy },
+  { key: "happy", labelKey: "record.moodHappy", emoji: "😊", score: 5, color: colors.mood.happy },
+  { key: "good", labelKey: "record.moodGood", emoji: "😇", score: 4, color: colors.mood.good },
+  { key: "fine", labelKey: "record.moodFine", emoji: "😌", score: 3, color: colors.mood.fine },
+  { key: "sad", labelKey: "record.moodSad", emoji: "😔", score: 2, color: colors.mood.sad },
+  { key: "unhappy", labelKey: "record.moodUnhappy", emoji: "😢", score: 1, color: colors.mood.unhappy },
 ];
 
 export default function RecordScreen() {
   const user = useAuthStore((s) => s.user);
   const language = useSettingsStore((s) => s.language);
+  const t = useT();
   const recordingRef = useRef<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -44,7 +45,7 @@ export default function RecordScreen() {
     try {
       const perm = await Audio.requestPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert("Microphone", "Autorisez le microphone pour enregistrer votre voix.");
+        Alert.alert(t("auth.privacy"), t("auth.micDenied"));
         return;
       }
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -78,7 +79,7 @@ export default function RecordScreen() {
       const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
       (recording as any).__timer = timer;
     } catch (e) {
-      Alert.alert("Erreur", "Impossible de démarrer l'enregistrement.");
+      Alert.alert("Error", t("record.recStartError"));
       console.warn("rec start error", e);
     }
   };
@@ -97,7 +98,7 @@ export default function RecordScreen() {
 
     const uri = rec.getURI();
     if (!uri) {
-      Alert.alert("Erreur", "Aucun enregistrement capturé.");
+      Alert.alert("Error", t("record.noAudio"));
       return;
     }
     setIsTranscribing(true);
@@ -114,10 +115,10 @@ export default function RecordScreen() {
       if (data?.text) {
         setText((prev) => (prev ? prev + "\n" : "") + data.text.trim());
         if (data?.language) setDetectedLang(data.language);
-      } else Alert.alert("Transcription", "Aucun texte détecté. Réessayez.");
+      } else Alert.alert("Transcription", t("record.noText"));
     } catch (e) {
       console.warn("transcribe error", e);
-      Alert.alert("Transcription échouée", "Veuillez réessayer ou écrire votre réponse.");
+      Alert.alert(t("record.transcribeFailed"), t("record.transcribeRetry"));
     } finally {
       setIsTranscribing(false);
     }
@@ -126,7 +127,7 @@ export default function RecordScreen() {
   const saveEntry = async () => {
     const content = text.trim();
     if (!content) {
-      Alert.alert("Entrée vide", "Écrivez ou enregistrez quelque chose d'abord.");
+      Alert.alert("Empty entry", t("record.empty"));
       return;
     }
     if (!user) return;
@@ -149,10 +150,10 @@ export default function RecordScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setText("");
       setMood("fine");
-      Alert.alert("✨ Enregistré !", "Votre entrée a été sauvegardée.");
+      Alert.alert(`✨ ${t("record.saved")}`, t("record.savedDesc"));
     } catch (e) {
       console.warn("save error", e);
-      Alert.alert("Erreur", "Impossible de sauvegarder l'entrée.");
+      Alert.alert("Error", t("record.saveError"));
     } finally {
       setSaving(false);
     }
@@ -161,8 +162,8 @@ export default function RecordScreen() {
   return (
     <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>🎙️ Nouvelle entrée</Text>
-        <Text style={styles.subtitle}>Parlez ou écrivez — comme vous préférez.</Text>
+        <Text style={styles.title}>🎙️ {t("record.title")}</Text>
+        <Text style={styles.subtitle}>{t("record.subtitle")}</Text>
 
         {/* Voice recording */}
         <View style={[styles.card, shadows.card]}>
@@ -171,14 +172,14 @@ export default function RecordScreen() {
               <View style={styles.micCircle}>
                 <Text style={styles.micIcon}>🎤</Text>
               </View>
-              <Text style={styles.micLabel}>{isTranscribing ? "Transcription en cours…" : "Appuyez pour enregistrer"}</Text>
+              <Text style={styles.micLabel}>{isTranscribing ? t("record.transcribing") : t("record.pressToRecord")}</Text>
             </Pressable>
           ) : (
             <Pressable style={[styles.micButton, styles.micActive]} onPress={stopAndTranscribe}>
               <View style={[styles.micCircle, styles.micCircleActive]}>
                 <Text style={styles.micIcon}>⏹️</Text>
               </View>
-              <Text style={styles.micLabel}>Arrêter ({seconds}s)</Text>
+              <Text style={styles.micLabel}>{t("record.stop")} ({seconds}s)</Text>
             </Pressable>
           )}
           {isTranscribing && <ActivityIndicator style={{ marginTop: 12 }} color={colors.primary} />}
@@ -187,7 +188,7 @@ export default function RecordScreen() {
         {/* Text area */}
         <TextInput
           style={[styles.textInput, shadows.soft]}
-          placeholder="Ou tapez votre réponse ici…"
+          placeholder={t("record.orType")}
           placeholderTextColor={colors.textFaint}
           multiline
           value={text}
@@ -196,7 +197,7 @@ export default function RecordScreen() {
         />
 
         {/* Mood */}
-        <Text style={styles.sectionLabel}>Comment vous sentez-vous ?</Text>
+        <Text style={styles.sectionLabel}>{t("record.howFeel")}</Text>
         <View style={styles.moodRow}>
           {MOODS.map((m) => {
             const active = mood === m.key;
@@ -208,7 +209,7 @@ export default function RecordScreen() {
               >
                 <Text style={styles.moodEmoji}>{m.emoji}</Text>
                 <Text style={[styles.moodLabel, active && { color: m.color, fontWeight: "700" }]}>
-                  {m.label}
+                  {t(m.labelKey)}
                 </Text>
                 {active && <View style={[styles.moodDot, { backgroundColor: m.color }]} />}
               </Pressable>
@@ -217,7 +218,7 @@ export default function RecordScreen() {
         </View>
 
         <Pressable style={[styles.saveButton, shadows.soft, saving && { opacity: 0.6 }]} onPress={saveEntry} disabled={saving}>
-          <Text style={styles.saveText}>{saving ? "Enregistrement…" : "Enregistrer ✨"}</Text>
+          <Text style={styles.saveText}>{saving ? t("record.saving") : `${t("record.save")} ✨`}</Text>
         </Pressable>
       </ScrollView>
     </LinearGradient>

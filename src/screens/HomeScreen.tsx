@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
+import { useT } from "@/store/settingsStore";
 import EntryCard from "@/components/EntryCard";
 
 interface Entry {
@@ -20,8 +21,8 @@ const fmtRelative = (iso: string) => {
     const now = new Date();
     const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
     const diffDays = Math.round((startOfDay(now) - startOfDay(d)) / 86400000);
-    if (diffDays <= 0) return "Aujourd'hui";
-    if (diffDays === 1) return "Hier";
+    if (diffDays <= 0) return "home.today";
+    if (diffDays === 1) return "home.yesterday";
     return d.toLocaleDateString("fr-CA", { day: "numeric", month: "long" });
   } catch {
     return iso;
@@ -50,6 +51,7 @@ const computeStreak = (dates: string[]): number => {
 
 export default function HomeScreen() {
   const user = useAuthStore((s) => s.user);
+  const t = useT();
   const navigation = useNavigation<any>();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -96,7 +98,8 @@ export default function HomeScreen() {
     .slice(0, 2)
     .join("")
     .toUpperCase();
-  const lastEntry = entries[0] ? fmtRelative(entries[0].created_at) : "—";
+  const lastEntryRaw = entries[0] ? fmtRelative(entries[0].created_at) : "—";
+  const lastEntry = lastEntryRaw.startsWith("home.") ? t(lastEntryRaw) : lastEntryRaw;
 
   return (
     <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
@@ -112,8 +115,8 @@ export default function HomeScreen() {
             {/* Header */}
             <View style={styles.headerRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.hello}>Bonjour {firstName} ✨</Text>
-                <Text style={styles.subtitle}>Comment allez-vous aujourd'hui ?</Text>
+                <Text style={styles.hello}>{t("home.greeting")} {firstName} ✨</Text>
+                <Text style={styles.subtitle}>{t("record.subtitle")}</Text>
               </View>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>{initials}</Text>
@@ -123,22 +126,22 @@ export default function HomeScreen() {
             {/* Journey Recap (web .glass-premium stats card) */}
             <View style={[styles.recapCard, shadows.card]}>
               <View style={styles.recapHeader}>
-                <Text style={styles.recapTitle}>Votre parcours</Text>
+                <Text style={styles.recapTitle}>{t("home.journey")}</Text>
               </View>
               <View style={styles.statsRow}>
                 <View style={styles.stat}>
                   <Text style={styles.statValue}>🔥 {streak}</Text>
-                  <Text style={styles.statLabel}>Série de jours</Text>
+                  <Text style={styles.statLabel}>{t("home.dayStreak")}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.stat}>
                   <Text style={styles.statValue}>📖 {totalCount}</Text>
-                  <Text style={styles.statLabel}>Entrées au total</Text>
+                  <Text style={styles.statLabel}>{t("home.totalEntries")}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.stat}>
                   <Text style={styles.statValue}>🕐 {lastEntry}</Text>
-                  <Text style={styles.statLabel}>Dernière entrée</Text>
+                  <Text style={styles.statLabel}>{t("home.lastEntry")}</Text>
                 </View>
               </View>
             </View>
@@ -149,20 +152,18 @@ export default function HomeScreen() {
                 <Text style={styles.quickEmoji}>🎙️</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.quickTitle}>Enregistrer une entrée</Text>
-                <Text style={styles.quickDesc}>Parlez librement — l'IA transcrit et organise</Text>
+                <Text style={styles.quickTitle}>{t("home.quickTitle")}</Text>
+                <Text style={styles.quickDesc}>{t("home.quickDesc")}</Text>
               </View>
               <Text style={styles.quickArrow}>→</Text>
             </Pressable>
 
-            <Text style={styles.sectionTitle}>Vos dernières entrées</Text>
+            <Text style={styles.sectionTitle}>{t("home.recentEntries")}</Text>
           </View>
         }
         renderItem={({ item }) => <EntryCard entry={item} />}
         ListEmptyComponent={
-          <Text style={styles.empty}>
-            Aucune entrée pour l'instant. Appuyez sur 🎙️ pour écrire votre première pensée.
-          </Text>
+          <Text style={styles.empty}>{t("home.empty")}</Text>
         }
       />
     </LinearGradient>

@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
+import { useT } from "@/store/settingsStore";
 import AuthScreen from "@/screens/AuthScreen";
 import HomeScreen from "@/screens/HomeScreen";
 import RecordScreen from "@/screens/RecordScreen";
@@ -32,14 +33,15 @@ const navTheme = {
   },
 };
 
-const TABS = [
-  { name: "Home", component: HomeScreen, icon: "home-outline" as const, iconActive: "home" as const, label: "Accueil" },
-  { name: "Record", component: RecordScreen, icon: "mic-outline" as const, iconActive: "mic" as const, label: "Écrire" },
-  { name: "Library", component: LibraryScreen, icon: "library-outline" as const, iconActive: "library" as const, label: "Bibliothèque" },
-  { name: "Profile", component: ProfileScreen, icon: "person-outline" as const, iconActive: "person" as const, label: "Profil" },
-];
-
 function MainTabs() {
+  const t = useT();
+  const TABS = [
+    { name: "Home", component: HomeScreen, icon: "home-outline" as const, iconActive: "home" as const, label: t("nav.home") },
+    { name: "Record", component: RecordScreen, icon: "mic-outline" as const, iconActive: "mic" as const, label: t("nav.record") },
+    { name: "Library", component: LibraryScreen, icon: "library-outline" as const, iconActive: "library" as const, label: t("nav.library") },
+    { name: "Profile", component: ProfileScreen, icon: "person-outline" as const, iconActive: "person" as const, label: t("nav.profile") },
+  ];
+
   return (
     <Tab.Navigator
       screenOptions={{

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { translations } from "@/i18n/translations";
 
 export type AppLanguage = "en" | "fr" | "es" | "ar" | "zh" | "ja" | "sw" | "de";
 
@@ -32,15 +33,20 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
 }));
 
-/** Simple dictionary — full i18n (8 languages) mirrors the web app; Phase 2. */
-const dict: Record<string, Record<string, Record<string, string>>> = {
-  home: {
-    fr: { greeting: "Bonjour", entries: "Entrées", streak: "Série" },
-    en: { greeting: "Hello", entries: "Entries", streak: "Streak" },
-  },
-};
+/**
+ * Translate a dotted key ("home.recentEntries") in the active language.
+ * Fallback chain: active lang -> English -> the raw key.
+ */
+export function useT() {
+  const language = useSettingsStore((s) => s.language);
+  return (key: string): string => translate(key, language);
+}
 
-export const t = (key: string, lang: AppLanguage = "fr"): string => {
-  const [section, k] = key.split(".");
-  return dict[section]?.[lang]?.[k] ?? dict[section]?.en?.[k] ?? key;
-};
+export function translate(key: string, lang: AppLanguage = "fr"): string {
+  const block = translations[lang] ?? translations.en;
+  const val = block?.[key];
+  if (val != null) return val;
+  const enVal = translations.en?.[key];
+  if (enVal != null) return enVal;
+  return key;
+}

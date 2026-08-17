@@ -13,10 +13,12 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
+import { useT } from "@/store/settingsStore";
 import { signInWithGoogle } from "@/lib/oauth";
 
 export default function AuthScreen() {
   const { signIn, signUp } = useAuthStore();
+  const t = useT();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,13 +26,13 @@ export default function AuthScreen() {
 
   const submit = async () => {
     if (!email.trim() || password.length < 6) {
-      Alert.alert("Soul Journal", "Veuillez entrer un email valide et un mot de passe (6+ caractères).");
+      Alert.alert("Soul Journal", t("auth.invalid"));
       return;
     }
     setBusy(true);
     const { error } = isLogin ? await signIn(email.trim(), password) : await signUp(email.trim(), password);
     setBusy(false);
-    if (error) Alert.alert(isLogin ? "Connexion impossible" : "Inscription", error);
+    if (error) Alert.alert(isLogin ? t("auth.loginFailed") : t("auth.signupFailed"), error);
   };
 
   return (
@@ -39,15 +41,15 @@ export default function AuthScreen() {
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <Text style={styles.logo}>✨ Soul Journal</Text>
           <Text style={styles.tagline}>
-            Votre journal guidé par l'IA — parlez, écrivez, et découvrez qui vous êtes.
+            {t("auth.tagline")}
           </Text>
 
           <View style={[styles.card, shadows.card]}>
-            <Text style={styles.title}>{isLogin ? "Connexion" : "Créer un compte"}</Text>
+            <Text style={styles.title}>{isLogin ? t("auth.login") : t("auth.signup")}</Text>
 
             <TextInput
               style={[styles.input, shadows.soft]}
-              placeholder="Email"
+              placeholder={t("auth.email")}
               placeholderTextColor={colors.textFaint}
               autoCapitalize="none"
               keyboardType="email-address"
@@ -56,7 +58,7 @@ export default function AuthScreen() {
             />
             <TextInput
               style={[styles.input, shadows.soft]}
-              placeholder="Mot de passe"
+              placeholder={t("auth.password")}
               placeholderTextColor={colors.textFaint}
               secureTextEntry
               value={password}
@@ -68,7 +70,7 @@ export default function AuthScreen() {
               onPress={submit}
               disabled={busy}
             >
-              <Text style={styles.buttonText}>{busy ? "..." : isLogin ? "Se connecter" : "Créer mon compte"}</Text>
+              <Text style={styles.buttonText}>{busy ? "..." : isLogin ? t("auth.signInBtn") : t("auth.createBtn")}</Text>
             </Pressable>
 
             <Pressable
@@ -81,18 +83,18 @@ export default function AuthScreen() {
               }}
               disabled={busy}
             >
-              <Text style={styles.googleText}>G · Continuer avec Google</Text>
+              <Text style={styles.googleText}>G · {t("auth.google")}</Text>
             </Pressable>
 
             <Pressable onPress={() => setIsLogin((v) => !v)} style={{ marginTop: 16 }}>
               <Text style={styles.switchText}>
-                {isLogin ? "Pas de compte ? Inscrivez-vous" : "Déjà un compte ? Connectez-vous"}
+                {isLogin ? t("auth.switchToSignup") : t("auth.switchToLogin")}
               </Text>
             </Pressable>
           </View>
 
           <Text style={styles.footnote}>
-            Vos entrées restent privées — l'IA lit uniquement vos réponses.
+            {t("auth.footnote")}
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

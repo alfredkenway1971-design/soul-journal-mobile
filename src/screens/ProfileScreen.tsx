@@ -4,9 +4,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { colors, fonts, glassCard, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
+import { useSettingsStore, useT } from "@/store/settingsStore";
+import { LANGUAGES } from "@/i18n/translations";
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
+  const t = useT();
+  const language = useSettingsStore((s) => s.language);
+  const setLanguage = useSettingsStore((s) => s.setLanguage);
   const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
@@ -22,9 +27,9 @@ export default function ProfileScreen() {
   }, [user]);
 
   const doSignOut = () => {
-    Alert.alert("Déconnexion", "Voulez-vous vraiment vous déconnecter ?", [
-      { text: "Annuler", style: "cancel" },
-      { text: "Déconnecter", style: "destructive", onPress: () => signOut() },
+    Alert.alert(t("nav.profile"), t("profile.signOutConfirm"), [
+      { text: t("profile.cancel"), style: "cancel" },
+      { text: t("profile.signOut"), style: "destructive", onPress: () => signOut() },
     ]);
   };
 
@@ -38,7 +43,7 @@ export default function ProfileScreen() {
   return (
     <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>👤 Profil</Text>
+        <Text style={styles.title}>👤 {t("nav.profile")}</Text>
 
         <View style={[styles.card, shadows.card]}>
           <View style={styles.avatar}>
@@ -48,38 +53,59 @@ export default function ProfileScreen() {
           <Text style={styles.email}>{user?.email}</Text>
         </View>
 
+        {/* Language switcher */}
+        <Text style={styles.sectionLabel}>🌐 {t("nav.library") === "Bibliothèque" ? "Langue" : "Language"}</Text>
+        <View style={[styles.langCard, shadows.soft]}>
+          {LANGUAGES.map((l, i) => {
+            const active = l.code === language;
+            return (
+              <Pressable
+                key={l.code}
+                style={[styles.langRow, i < LANGUAGES.length - 1 && styles.langRowBorder, active && styles.langRowActive]}
+                onPress={() => setLanguage(l.code)}
+              >
+                <Text style={styles.langFlag}>{l.flag}</Text>
+                <Text style={[styles.langName, active && { color: colors.primary, fontWeight: "700" }]}>
+                  {l.native}
+                </Text>
+                {active && <Text style={styles.langCheck}>✓</Text>}
+              </Pressable>
+            );
+          })}
+        </View>
+
         {/* Phase 2: Goals, Relations, Voice, AI features, Manage subscription */}
-        <Pressable style={[styles.row, shadows.soft]} onPress={() => Alert.alert("Bientôt", "Objectifs & IA — Phase 2.")}>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => Alert.alert(t("profile.comingSoon"), "Objectifs & IA — Phase 2.")}>
           <View style={styles.rowIcon}>
             <Text style={styles.rowEmoji}>🎯</Text>
           </View>
-          <Text style={styles.rowLabel}>Objectifs</Text>
+          <Text style={styles.rowLabel}>{t("profile.objectives")}</Text>
           <Text style={styles.rowArrow}>→</Text>
         </Pressable>
-        <Pressable style={[styles.row, shadows.soft]} onPress={() => Alert.alert("Bientôt", "Voix clonée — Phase 2.")}>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => Alert.alert(t("profile.comingSoon"), "Voix clonée — Phase 2.")}>
           <View style={styles.rowIcon}>
             <Text style={styles.rowEmoji}>🎙️</Text>
           </View>
-          <Text style={styles.rowLabel}>Ma voix</Text>
+          <Text style={styles.rowLabel}>{t("profile.voice")}</Text>
           <Text style={styles.rowArrow}>→</Text>
         </Pressable>
-        <Pressable style={[styles.row, shadows.soft]} onPress={() => Alert.alert("Bientôt", "Abonnement — Phase 3 (Google Play).")}>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => Alert.alert(t("profile.comingSoon"), "Abonnement — Phase 3 (Google Play).")}>
           <View style={styles.rowIcon}>
             <Text style={styles.rowEmoji}>👑</Text>
           </View>
-          <Text style={styles.rowLabel}>Premium & abonnement</Text>
+          <Text style={styles.rowLabel}>{t("profile.premium")}</Text>
           <Text style={styles.rowArrow}>→</Text>
         </Pressable>
-        <Pressable style={[styles.row, shadows.soft]} onPress={() => Alert.alert("Soul Journal", "Version 0.1.0 (Phase 1 — Android).")}>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => Alert.alert("Soul Journal", t("profile.version"))}>
           <View style={styles.rowIcon}>
             <Text style={styles.rowEmoji}>ℹ️</Text>
           </View>
-          <Text style={styles.rowLabel}>À propos</Text>
+          <Text style={styles.rowLabel}>{t("profile.about")}</Text>
           <Text style={styles.rowArrow}>→</Text>
         </Pressable>
 
         <Pressable style={styles.signOut} onPress={doSignOut}>
-          <Text style={styles.signOutText}>Se déconnecter</Text>
+          <Text style={styles.signOutText}>{t("profile.signOut")}</Text>
         </Pressable>
       </ScrollView>
     </LinearGradient>
@@ -115,6 +141,22 @@ const styles = StyleSheet.create({
   avatarText: { color: colors.white, fontSize: 22, fontWeight: "700", fontFamily: fonts.bodyBold },
   name: { fontSize: 20, color: colors.text, fontFamily: fonts.displayBold },
   email: { fontSize: 13, color: colors.textMuted, marginTop: 4, fontFamily: fonts.body },
+  sectionLabel: { fontSize: 13, color: colors.textMuted, marginTop: 8, marginBottom: 8, fontFamily: fonts.bodySemiBold },
+  langCard: {
+    ...glassCard,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  langRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  langRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.glassBorder },
+  langRowActive: {},
+  langFlag: { fontSize: 17, marginRight: 12 },
+  langName: { flex: 1, fontSize: 15, color: colors.text, fontFamily: fonts.body },
+  langCheck: { fontSize: 15, color: colors.primary, fontWeight: "700" },
   row: {
     flexDirection: "row",
     alignItems: "center",

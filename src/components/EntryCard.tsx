@@ -2,6 +2,7 @@ import { memo } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { colors, fonts, glassCard, shadows } from "@/theme";
+import { useT } from "@/store/settingsStore";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -28,6 +29,7 @@ const fmtDate = (iso: string) => {
 
 export default memo(function EntryCard({ entry }: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const t = useT();
 
   return (
     <Pressable
@@ -37,7 +39,7 @@ export default memo(function EntryCard({ entry }: Props) {
       <Text style={styles.date}>{fmtDate(entry.created_at)}</Text>
       <View style={styles.row}>
         <Text style={styles.title} numberOfLines={2}>
-          {entry.title || "Sans titre"}
+          {entry.title || t("entry.untitled")}
         </Text>
         <Text style={styles.mood}>{MOOD_EMOJI[entry.mood ?? ""] ?? "📝"}</Text>
       </View>

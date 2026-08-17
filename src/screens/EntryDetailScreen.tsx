@@ -10,6 +10,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
+import { useT } from "@/store/settingsStore";
 
 const MOOD_EMOJI: Record<string, string> = {
   happy: "😊",
@@ -55,6 +56,7 @@ export default function EntryDetailScreen() {
   const route = useRoute<EntryDetailRoute>();
   const navigation = useNavigation();
   const user = useAuthStore((s) => s.user);
+  const t = useT();
   const [entry, setEntry] = useState<EntryDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(false);
@@ -150,21 +152,21 @@ export default function EntryDetailScreen() {
     } catch (e) {
       console.warn("play error", e);
       setGenerating(false);
-      Alert.alert("Lecture impossible", "Impossible de générer la voix. Réessayez.");
+      Alert.alert("Playback", t("entry.playFailed"));
     }
   };
 
   const confirmDelete = () => {
     if (!entry) return;
-    Alert.alert("Supprimer l'entrée", "Cette action est définitive. Continuer ?", [
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t("entry.delete"), t("entry.deleteConfirm"), [
+      { text: t("profile.cancel"), style: "cancel" },
       {
-        text: "Supprimer",
+        text: t("entry.deleteBtn"),
         style: "destructive",
         onPress: async () => {
           const { error } = await supabase.from("journal_entries").delete().eq("id", entry.id);
           if (error) {
-            Alert.alert("Erreur", "Impossible de supprimer l'entrée.");
+            Alert.alert("Error", t("entry.deleteError"));
             return;
           }
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -184,9 +186,9 @@ export default function EntryDetailScreen() {
         </View>
       ) : !entry ? (
         <View style={styles.center}>
-          <Text style={styles.missing}>Entrée introuvable.</Text>
+          <Text style={styles.missing}>{t("entry.notFound")}</Text>
           <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>Retour</Text>
+            <Text style={styles.backBtnText}>{t("entry.back")}</Text>
           </Pressable>
         </View>
       ) : (
@@ -197,7 +199,7 @@ export default function EntryDetailScreen() {
               <Text style={styles.iconBtnText}>←</Text>
             </Pressable>
             <Text style={styles.headerTitle} numberOfLines={1}>
-              {entry.title || "Sans titre"}
+              {entry.title || t("entry.untitled")}
             </Text>
             <Pressable style={styles.iconBtn} onPress={confirmDelete}>
               <Text style={styles.iconBtnTextDanger}>🗑️</Text>
@@ -228,17 +230,17 @@ export default function EntryDetailScreen() {
             )}
             <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={styles.playTitle}>
-                {generating ? "Génération de la voix…" : playing ? "Arrêter l'écoute" : "Écouter mon entrée"}
+                {generating ? t("entry.generating") : playing ? t("entry.listening") : t("entry.listen")}
               </Text>
               <Text style={styles.playDesc}>
-                {generating ? "Quelques secondes — la voix est gratuite." : "Voix IA (Fish Audio)"}
+                {generating ? t("entry.generatingDesc") : t("entry.aiVoice")}
               </Text>
             </View>
           </Pressable>
 
           {/* Body */}
           <View style={[styles.bodyCard, shadows.card]}>
-            <Text style={styles.bodyText}>{body || "Aucun contenu."}</Text>
+            <Text style={styles.bodyText}>{body || t("entry.noContent")}</Text>
           </View>
         </ScrollView>
       )}

@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { colors, fonts } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
+import { useT } from "@/store/settingsStore";
 import EntryCard from "@/components/EntryCard";
 
 interface Entry {
@@ -15,6 +16,7 @@ interface Entry {
 
 export default function LibraryScreen() {
   const user = useAuthStore((s) => s.user);
+  const t = useT();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [count, setCount] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,12 +54,12 @@ export default function LibraryScreen() {
         }
         ListHeaderComponent={
           <View style={styles.headerRow}>
-            <Text style={styles.title}>📚 Bibliothèque</Text>
-            {count != null && <Text style={styles.count}>{count} entrée{count > 1 ? "s" : ""}</Text>}
+            <Text style={styles.title}>📚 {t("nav.library")}</Text>
+            {count != null && <Text style={styles.count}>{t("library.entries").replace("{count}", String(count))}</Text>}
           </View>
         }
         renderItem={({ item }) => <EntryCard entry={item} />}
-        ListEmptyComponent={<Text style={styles.empty}>Aucune entrée pour l'instant.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t("library.empty")}</Text>}
       />
     </LinearGradient>
   );
