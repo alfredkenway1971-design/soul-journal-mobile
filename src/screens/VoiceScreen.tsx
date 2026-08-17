@@ -34,6 +34,8 @@ export default function VoiceScreen() {
 
   useEffect(() => {
     setAudioModeAsync({ allowsRecording: true });
+    // Pre-request mic permission on screen open (only asks once per install).
+    requestRecordingPermissionsAsync().catch(() => {});
     return () => {
       playerRef.current?.remove();
     };

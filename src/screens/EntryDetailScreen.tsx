@@ -64,7 +64,7 @@ export default function EntryDetailScreen() {
   const playerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
 
   useEffect(() => {
-    setAudioModeAsync({ allowsRecording: false });
+    setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
   }, []);
 
   const load = useCallback(async () => {
@@ -111,6 +111,34 @@ export default function EntryDetailScreen() {
     const text = entry.enhanced_text || entry.original_transcription || "";
     if (!text.trim()) return;
 
+    // Cached audio dir — repeat plays are instant, no re-synthesis
+    const audioDir = `${FileSystem.documentDirectory}voice-cache/`;
+    const fileUri = `${audioDir}voice-${entry.id}.mp3`;
+
+    const playFromFile = async (uri: string) => {
+      const player = createAudioPlayer({ uri });
+      playerRef.current = player;
+      setGenerating(false);
+      setPlaying(true);
+      player.addListener("playbackStatusUpdate", (status) => {
+        if (status.playbackState === "ended") {
+          setPlaying(false);
+          player.remove();
+          playerRef.current = null;
+        }
+      });
+      player.play();
+    };
+
+    // 1) Try the local cache first (instant)
+    try {
+      const info = await FileSystem.getInfoAsync(fileUri);
+      if (info.exists) {
+        await playFromFile(fileUri);
+        return;
+      }
+    } catch {}
+
     setGenerating(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -142,24 +170,12 @@ export default function EntryDetailScreen() {
       const json = await res.json();
       if (!json?.audioContent) throw new Error("no audio");
 
-      // base64 -> file -> play
-      const fileUri = `${FileSystem.cacheDirectory}voice-${entry.id}.mp3`;
+      // 2) Save to the persistent cache, then play
+      await FileSystem.makeDirectoryAsync(audioDir, { intermediates: true }).catch(() => {});
       await FileSystem.writeAsStringAsync(fileUri, json.audioContent, {
         encoding: FileSystem.EncodingType.Base64,
       });
-
-      const player = createAudioPlayer({ uri: fileUri });
-      playerRef.current = player;
-      setGenerating(false);
-      setPlaying(true);
-      player.addListener("playbackStatusUpdate", (status) => {
-        if (status.playbackState === "ended") {
-          setPlaying(false);
-          player.remove();
-          playerRef.current = null;
-        }
-      });
-      player.play();
+      await playFromFile(fileUri);
     } catch (e) {
       console.warn("play error", e);
       setGenerating(false);

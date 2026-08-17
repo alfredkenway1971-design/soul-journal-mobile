@@ -165,6 +165,20 @@ export default function HomeScreen() {
               </View>
             )}
 
+            {/* Soul Mirror home card (web has this above Quick Capture) */}
+            <Pressable style={[styles.soulMirrorCard, shadows.card]} onPress={() => navigation.navigate("SoulMirror")}>
+              <View style={styles.soulMirrorRow}>
+                <View style={styles.soulMirrorIcon}>
+                  <Text style={styles.soulMirrorEmoji}>🪞</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.soulMirrorTitle}>Soul Mirror</Text>
+                  <Text style={styles.soulMirrorDesc}>Votre portrait mensuel — laissez l'IA vous éclairer.</Text>
+                </View>
+                <Text style={styles.soulMirrorArrow}>→</Text>
+              </View>
+            </Pressable>
+
             {/* Quick capture */}
             <Pressable style={[styles.quickCard, shadows.soft]} onPress={() => navigation.navigate("Record")}>
               <View style={styles.quickIconWrap}>
@@ -260,6 +274,26 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: fonts.body,
   },
+  soulMirrorCard: {
+    ...glassCard,
+    padding: 16,
+    marginBottom: 16,
+    backgroundColor: "rgba(255,255,255,0.75)",
+  },
+  soulMirrorRow: { flexDirection: "row", alignItems: "center" },
+  soulMirrorIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    backgroundColor: colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  soulMirrorEmoji: { fontSize: 22 },
+  soulMirrorTitle: { fontSize: 15, color: colors.text, fontFamily: fonts.bodySemiBold },
+  soulMirrorDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
+  soulMirrorArrow: { fontSize: 18, color: colors.primary, fontWeight: "700" },
   quickCard: {
     flexDirection: "row",
     alignItems: "center",

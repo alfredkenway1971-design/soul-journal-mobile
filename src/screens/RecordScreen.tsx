@@ -39,6 +39,9 @@ export default function RecordScreen() {
 
   useEffect(() => {
     setAudioModeAsync({ allowsRecording: true });
+    // Ask for mic permission ONCE when the screen opens (not on first press),
+    // so recording starts immediately when the user taps the button.
+    requestRecordingPermissionsAsync().catch(() => {});
     return () => {
       // recorder is a shared object from the hook; nothing to unload
     };
