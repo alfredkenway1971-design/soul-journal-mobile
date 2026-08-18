@@ -32,20 +32,22 @@ const fmtRelative = (iso: string) => {
 
 const computeStreak = (dates: string[]): number => {
   if (!dates.length) return 0;
-  const days = new Set(
-    dates.map((iso) => {
-      const d = new Date(iso);
-      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    })
-  );
+  // Same approach as the web's HomePage: normalize to local date strings
+  // (toDateString is timezone-safe — no getMonth/getDate UTC/local mismatch).
+  const unique = [...new Set(dates.map((iso) => new Date(iso).toDateString()))]
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  if (unique.length === 0) return 0;
   let streak = 0;
-  const cursor = new Date();
-  // If today has no entry yet, allow streak to start from yesterday.
-  const key = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-  if (!days.has(key(cursor))) cursor.setDate(cursor.getDate() - 1);
-  while (days.has(key(cursor))) {
+  const today = new Date().toDateString();
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  // Lenient start: today's entry, or yesterday's if today is still empty
+  let cursor = unique[0] === today || unique[0] === yesterday ? unique[0] : null;
+  if (!cursor) return 0;
+  const index = unique.indexOf(cursor);
+  for (let i = index; i < unique.length; i++) {
+    const expected = new Date(new Date(cursor).getTime() - (i - index) * 86400000).toDateString();
+    if (unique[i] !== expected) break;
     streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
   }
   return streak;
 };
