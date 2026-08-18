@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, radius, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
+import { resolveAvatarUrl } from "@/lib/avatar";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore, useT } from "@/store/settingsStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
@@ -78,7 +79,10 @@ export default function ProfileScreen() {
       .maybeSingle()
       .then(({ data }) => {
         if (data?.display_name) setDisplayName(data.display_name);
-        if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+        if (data?.avatar_url) {
+          // Stored URL may be a broken single-nested path — resolve the real one
+          resolveAvatarUrl(data.avatar_url).then(setAvatarUrl);
+        }
       });
     // Admin flag (same check as the Admin screen — only admins see the row)
     supabase

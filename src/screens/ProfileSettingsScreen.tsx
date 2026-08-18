@@ -9,6 +9,7 @@ import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
+import { resolveAvatarUrl } from "@/lib/avatar";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
 
@@ -33,7 +34,10 @@ export default function ProfileSettingsScreen() {
       .eq("id", user.id)
       .maybeSingle();
     if (data?.display_name) setDisplayName(data.display_name);
-    if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+    if (data?.avatar_url) {
+      // Stored URL may be a broken single-nested path — resolve the real one
+      resolveAvatarUrl(data.avatar_url).then(setAvatarUrl);
+    }
     if ((data as any)?.gender) setGender((data as any).gender);
     if (Array.isArray((data as any)?.interests)) setInterests((data as any).interests);
   }, [user]);
@@ -71,7 +75,8 @@ export default function ProfileSettingsScreen() {
         encoding: FileSystem.EncodingType.Base64,
       });
       const ext = uri.split(".").pop()?.toLowerCase() || "jpg";
-      const fileName = `${user.id}-${Date.now()}.${ext}`;
+      // Upload into the user's folder (nested path that the storage server serves)
+      const fileName = `${user.id}/${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
@@ -82,7 +87,10 @@ export default function ProfileSettingsScreen() {
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(fileName);
-      const urlWithCacheBuster = `${publicUrl}?t=${Date.now()}`;
+      // getPublicUrl yields the single-nested path which the server rejects —
+      // resolve the working (double-nested) URL and store THAT.
+      const resolved = await resolveAvatarUrl(publicUrl);
+      const urlWithCacheBuster = `${resolved ?? publicUrl}?t=${Date.now()}`;
 
       const { error: updateError } = await supabase
         .from("profiles")

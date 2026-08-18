@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable } from "react-native";
+import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, radius, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
+import { resolveAvatarUrl } from "@/lib/avatar";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore, useT } from "@/store/settingsStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
@@ -99,7 +100,10 @@ export default function HomeScreen() {
         .maybeSingle(),
     ]);
     if (profile?.display_name) setDisplayName(profile.display_name);
-    if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
+    if (profile?.avatar_url) {
+      // Stored URL may be a broken single-nested path — resolve the real one
+      resolveAvatarUrl(profile.avatar_url).then(setAvatarUrl);
+    }
     if (rows) {
       setEntries(
         (rows as any[]).map((e) => {
@@ -188,9 +192,7 @@ export default function HomeScreen() {
                 </Pressable>
                 <Pressable onPress={() => navigation.navigate("ProfileSettings" as any)}>
                   {avatarUrl ? (
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarText}>{initials}</Text>
-                    </View>
+                    <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
                   ) : (
                     <View style={styles.avatar}>
                       <Text style={styles.avatarText}>{initials}</Text>
@@ -380,6 +382,19 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
     backgroundColor: "#334155",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.7)",
+    shadowColor: "rgba(26,63,110,0.2)",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  avatarImage: {
+    width: 46,
+    height: 46,
+    borderRadius: 999,
+    backgroundColor: "#e2e8f0",
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.7)",
     shadowColor: "rgba(26,63,110,0.2)",
