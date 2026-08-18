@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
@@ -23,6 +24,8 @@ const CATEGORY_EMOJI: Record<string, string> = {
 
 export default function GratitudeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
   const t = useT();
   const [items, setItems] = useState<GratitudeItem[]>([]);
@@ -129,7 +132,7 @@ export default function GratitudeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -138,20 +141,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardGlassStrong, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   emptyCard: { ...glassCard, padding: 28, alignItems: "center" },
   emptyEmoji: { fontSize: 36, marginBottom: 10 },
-  emptyText: { fontSize: 14, color: colors.textMuted, textAlign: "center", lineHeight: 21, fontFamily: fonts.body },
+  emptyText: { fontSize: 14, color: colors.textMuted, textAlign: "center", lineHeight: 21, fontFamily: appFonts.body },
   catBlock: { marginBottom: 16 },
   catTitle: {
     fontSize: 14,
     color: colors.primary,
-    fontFamily: fonts.bodySemiBold,
+    fontFamily: appFonts.bodySemiBold,
     textTransform: "capitalize",
     marginBottom: 8,
   },
   itemCard: { ...glassCard, padding: 14, marginBottom: 8 },
-  itemText: { fontSize: 14, color: colors.text, lineHeight: 20, fontFamily: fonts.body },
-  itemCount: { fontSize: 11, color: colors.textFaint, marginTop: 6, fontFamily: fonts.bodyMedium },
+  itemText: { fontSize: 14, color: colors.text, lineHeight: 20, fontFamily: appFonts.body },
+  itemCount: { fontSize: 11, color: colors.textFaint, marginTop: 6, fontFamily: appFonts.bodyMedium },
 });

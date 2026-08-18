@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import {
   View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
@@ -7,6 +7,7 @@ import { useAudioRecorder, requestRecordingPermissionsAsync, setAudioModeAsync, 
 import * as Haptics from "expo-haptics";
 import * as FileSystem from "expo-file-system/legacy";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore, useT } from "@/store/settingsStore";
@@ -24,6 +25,8 @@ const DREAM_URL = "https://soul-journal-seven.vercel.app/api/dream-reflection";
 
 export default function RecordScreen() {
   const user = useAuthStore((s) => s.user);
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const language = useSettingsStore((s) => s.language);
   const t = useT();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
@@ -120,7 +123,7 @@ export default function RecordScreen() {
       const words = content.split(/\s+/);
       const title = words.slice(0, 6).join(" ").slice(0, 60) + (words.length > 6 ? "…" : "");
       const moodObj = MOODS.find((m) => m.key === mood)!;
-      const { error } = await supabase.from("journal_entries").insert({
+      const { data: inserted, error } = await supabase.from("journal_entries").insert({
         user_id: user.id,
         title,
         enhanced_text: content,
@@ -129,14 +132,19 @@ export default function RecordScreen() {
         mood_score: moodObj.score,
         detected_language: detectedLang ?? language,
         created_at: new Date().toISOString(),
-      });
+      }).select("id");
       if (error) throw error;
+      const entryId = inserted?.[0]?.id as string | undefined;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setText("");
       setMood("fine");
       if (isDream) {
         setIsDream(false);
         generateDreamReflection(content);
+      }
+      // Soul Mirror reflection in the background (web parity — fire and forget)
+      if (entryId && content.trim()) {
+        generateSoulReflection(entryId, content);
       }
       Alert.alert(`✨ ${t("record.saved")}`, t("record.savedDesc"));
     } catch (e) {
@@ -224,6 +232,41 @@ export default function RecordScreen() {
       console.warn("dream error", e);
     } finally {
       setDreamLoading(false);
+    }
+  };
+
+  const generateSoulReflection = async (entryId: string, entryText: string) => {
+    if (!user) return;
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("no session");
+
+      // Profile context for a personalized reflection (web parity)
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("goals, fears, strengths, worldview, soul_profile_summary")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const res = await supabase.functions.invoke("generate-soul-reflection", {
+        body: {
+          entryText,
+          goals: (prof as any)?.goals || [],
+          fears: (prof as any)?.fears || [],
+          strengths: (prof as any)?.strengths || [],
+          worldview: (prof as any)?.worldview || null,
+          soulProfileSummary: (prof as any)?.soul_profile_summary || null,
+          language: language === "fr" ? "French" : language === "es" ? "Spanish" : language === "ar" ? "Arabic" : language === "sw" ? "Swahili" : language === "zh" ? "Chinese" : language === "ja" ? "Japanese" : language === "de" ? "German" : "English",
+        },
+      });
+      if (res.error) throw res.error;
+      const reflection = (res.data as any)?.reflection as string | undefined;
+      if (reflection) {
+        await supabase.from("journal_entries").update({ soul_reflection: reflection }).eq("id", entryId);
+      }
+    } catch (e) {
+      console.warn("soul reflection error", e); // fire-and-forget: never block saving
     }
   };
 
@@ -352,15 +395,15 @@ export default function RecordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 110 },
   title: {
     fontSize: 26,
     color: colors.text,
-    fontFamily: fonts.displayBold,
+    fontFamily: appFonts.displayBold,
   },
-  subtitle: { fontSize: 14, color: colors.textMuted, marginTop: 4, marginBottom: 20, fontFamily: fonts.body },
+  subtitle: { fontSize: 14, color: colors.textMuted, marginTop: 4, marginBottom: 20, fontFamily: appFonts.body },
   card: {
     ...glassCard,
     padding: 20,
@@ -387,7 +430,7 @@ const styles = StyleSheet.create({
   micCircleActive: { backgroundColor: "#fee2e2", borderColor: "rgba(239,68,68,0.35)" },
   micActive: {},
   micIcon: { fontSize: 32 },
-  micLabel: { fontSize: 15, color: colors.text, marginTop: 2, fontFamily: fonts.bodySemiBold },
+  micLabel: { fontSize: 15, color: colors.text, marginTop: 2, fontFamily: appFonts.bodySemiBold },
   textInput: {
     backgroundColor: colors.cardGlassStrong,
     borderRadius: radius.card,
@@ -399,9 +442,9 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
     marginTop: 16,
     marginBottom: 20,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
-  sectionLabel: { fontSize: 14, color: colors.text, marginBottom: 10, fontFamily: fonts.bodySemiBold },
+  sectionLabel: { fontSize: 14, color: colors.text, marginBottom: 10, fontFamily: appFonts.bodySemiBold },
   promptsCard: {
     ...glassCard,
     padding: 16,
@@ -413,8 +456,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 10,
   },
-  promptsTitle: { fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold },
-  promptsRefresh: { fontSize: 12, color: colors.primary, fontFamily: fonts.bodySemiBold },
+  promptsTitle: { fontSize: 14, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  promptsRefresh: { fontSize: 12, color: colors.primary, fontFamily: appFonts.bodySemiBold },
   promptChip: {
     backgroundColor: colors.primaryLight,
     borderRadius: radius.input,
@@ -422,7 +465,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 8,
   },
-  promptText: { fontSize: 13, color: colors.text, lineHeight: 19, fontFamily: fonts.body },
+  promptText: { fontSize: 13, color: colors.text, lineHeight: 19, fontFamily: appFonts.body },
   promptTrigger: {
     backgroundColor: colors.primaryLight,
     borderRadius: radius.input,
@@ -432,7 +475,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(29,129,237,0.2)",
   },
-  promptTriggerText: { fontSize: 13, color: colors.primary, fontFamily: fonts.bodySemiBold },
+  promptTriggerText: { fontSize: 13, color: colors.primary, fontFamily: appFonts.bodySemiBold },
   moodRow: { flexDirection: "row", gap: 8, flexWrap: "wrap", marginBottom: 24 },
   moodChip: {
     backgroundColor: colors.cardGlass,
@@ -445,7 +488,7 @@ const styles = StyleSheet.create({
     minWidth: 64,
   },
   moodEmoji: { fontSize: 20 },
-  moodLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
+  moodLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2, fontFamily: appFonts.body },
   moodDot: { width: 5, height: 5, borderRadius: 999, marginTop: 4 },
   dreamChip: {
     backgroundColor: colors.cardGlass,
@@ -458,20 +501,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   dreamChipActive: { backgroundColor: "#fdf3f3", borderColor: "#c9a3b8" },
-  dreamChipText: { fontSize: 13, color: colors.text, fontFamily: fonts.bodySemiBold },
+  dreamChipText: { fontSize: 13, color: colors.text, fontFamily: appFonts.bodySemiBold },
   dreamCard: {
     ...glassCard,
     padding: 18,
     marginBottom: 16,
     backgroundColor: "rgba(255,255,255,0.8)",
   },
-  dreamTitle: { fontSize: 14, color: colors.text, fontFamily: fonts.displayBold, marginBottom: 8 },
-  dreamText: { fontSize: 14, lineHeight: 21, color: colors.text, fontFamily: fonts.body },
+  dreamTitle: { fontSize: 14, color: colors.text, fontFamily: appFonts.displayBold, marginBottom: 8 },
+  dreamText: { fontSize: 14, lineHeight: 21, color: colors.text, fontFamily: appFonts.body },
   saveButton: {
     backgroundColor: colors.primary,
     borderRadius: radius.input,
     paddingVertical: 16,
     alignItems: "center",
   },
-  saveText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: fonts.bodyBold },
+  saveText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: appFonts.bodyBold },
 });

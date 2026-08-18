@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, radius, fonts } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { usePinStore } from "@/store/pinStore";
 
 /** Full-screen lock shown at app open when a PIN is set. */
 export default function PinLockScreen() {
   const { verifyPin, unlock } = usePinStore();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const [entry, setEntry] = useState("");
 
   const press = (d: string) => {
@@ -56,12 +59,12 @@ export default function PinLockScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   lockEmoji: { fontSize: 44, marginBottom: 10 },
-  title: { fontSize: 26, color: colors.text, fontFamily: "PlayfairDisplay_700Bold" },
-  subtitle: { fontSize: 14, color: colors.textMuted, marginTop: 6, fontFamily: fonts.body },
+  title: { fontSize: 26, color: colors.text, fontFamily: appFonts.displayBold },
+  subtitle: { fontSize: 14, color: colors.textMuted, marginTop: 6, fontFamily: appFonts.body },
   dots: { flexDirection: "row", gap: 12, marginTop: 28, marginBottom: 32 },
   dot: { width: 16, height: 16, borderRadius: 999, backgroundColor: colors.glassBorder },
   dotFilled: { backgroundColor: colors.primary },
@@ -77,5 +80,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  keyText: { fontSize: 24, color: colors.text, fontFamily: fonts.bodyMedium },
+  keyText: { fontSize: 24, color: colors.text, fontFamily: appFonts.bodyMedium },
 });

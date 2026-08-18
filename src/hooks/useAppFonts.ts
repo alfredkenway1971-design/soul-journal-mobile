@@ -1,20 +1,22 @@
-import { useFontStore } from "@/store/fontStore";
-import { DISPLAY_FONT_FAMILY } from "@/theme";
+import { useFontStore, fontFamilies } from "@/store/fontStore";
+
+/** The full font family map consumed by makeStyles factories across the app. */
+export interface AppFonts {
+  body: string | undefined;
+  bodyMedium: string | undefined;
+  bodySemiBold: string | undefined;
+  bodyBold: string | undefined;
+  display: string | undefined;
+  displayBold: string | undefined;
+  cursive: boolean;
+}
 
 /**
- * Returns the active display-font family for headings, live-updating when the
- * user changes it in Font settings. Body font stays Inter (like the web).
+ * Live-updating font families for the active font choice. Any component that
+ * builds styles through a makeStyles(appFonts) factory re-renders when the
+ * user changes the font, applying it across the whole app.
  */
-export function useAppFonts() {
-  const display = useFontStore((s) => s.display);
-  return {
-    display: DISPLAY_FONT_FAMILY[display === "caveat" ? "caveat" : display === "inter" ? "inter" : "playfair"],
-    displayBold:
-      display === "caveat"
-        ? DISPLAY_FONT_FAMILY.caveat
-        : display === "inter"
-        ? DISPLAY_FONT_FAMILY.inter
-        : DISPLAY_FONT_FAMILY.playfairBold,
-    isCursive: display === "caveat",
-  };
+export function useAppFonts(): AppFonts {
+  const font = useFontStore((s) => s.font);
+  return fontFamilies(font);
 }

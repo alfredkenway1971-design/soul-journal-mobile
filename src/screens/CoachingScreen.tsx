@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
@@ -25,6 +26,8 @@ const fmtDate = (iso: string) => {
 
 export default function CoachingScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
   const t = useT();
   const [insights, setInsights] = useState<Insight[]>([]);
@@ -79,7 +82,7 @@ export default function CoachingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -88,12 +91,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardGlassStrong, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   emptyCard: { ...glassCard, padding: 28, alignItems: "center" },
   emptyEmoji: { fontSize: 36, marginBottom: 10 },
-  emptyText: { fontSize: 14, color: colors.textMuted, textAlign: "center", lineHeight: 21, fontFamily: fonts.body },
+  emptyText: { fontSize: 14, color: colors.textMuted, textAlign: "center", lineHeight: 21, fontFamily: appFonts.body },
   card: { ...glassCard, padding: 16, marginBottom: 10 },
-  date: { fontSize: 12, color: colors.textFaint, marginBottom: 6, fontFamily: fonts.bodyMedium },
-  insightText: { fontSize: 14, lineHeight: 21, color: colors.text, fontFamily: fonts.body },
+  date: { fontSize: 12, color: colors.textFaint, marginBottom: 6, fontFamily: appFonts.bodyMedium },
+  insightText: { fontSize: 14, lineHeight: 21, color: colors.text, fontFamily: appFonts.body },
 });

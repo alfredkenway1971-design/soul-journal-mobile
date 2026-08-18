@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
@@ -8,6 +8,7 @@ import * as Haptics from "expo-haptics";
 import * as FileSystem from "expo-file-system/legacy";
 import { useNavigation } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT, useSettingsStore } from "@/store/settingsStore";
@@ -25,6 +26,8 @@ interface VoiceProfile {
 
 export default function VoiceScreen() {
   const navigation = useNavigation();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
   const t = useT();
   const language = useSettingsStore((s) => s.language);
@@ -342,7 +345,7 @@ export default function VoiceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -356,14 +359,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   listCard: {
     ...glassCard,
     padding: 16,
     marginBottom: 16,
   },
-  listTitle: { fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold, marginBottom: 10 },
+  listTitle: { fontSize: 14, color: colors.text, fontFamily: appFonts.bodySemiBold, marginBottom: 10 },
   cloneRow: {
     ...glassCard,
     flexDirection: "row",
@@ -372,17 +375,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   cloneFlag: { fontSize: 22, marginRight: 12 },
-  cloneName: { fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold },
-  cloneId: { fontSize: 11, color: colors.textFaint, marginTop: 2, fontFamily: fonts.body },
+  cloneName: { fontSize: 14, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  cloneId: { fontSize: 11, color: colors.textFaint, marginTop: 2, fontFamily: appFonts.body },
   reRecordBtn: {
     backgroundColor: colors.primaryLight,
     borderRadius: radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  reRecordText: { fontSize: 12, color: colors.primary, fontFamily: fonts.bodySemiBold },
+  reRecordText: { fontSize: 12, color: colors.primary, fontFamily: appFonts.bodySemiBold },
   cloneDelete: { fontSize: 16 },
-  sectionLabel: { fontSize: 13, color: colors.textMuted, marginTop: 4, marginBottom: 8, fontFamily: fonts.bodySemiBold },
+  sectionLabel: { fontSize: 13, color: colors.textMuted, marginTop: 4, marginBottom: 8, fontFamily: appFonts.bodySemiBold },
   langRow: { flexDirection: "row", marginBottom: 16 },
   langChip: {
     backgroundColor: colors.cardGlass,
@@ -395,7 +398,7 @@ const styles = StyleSheet.create({
   },
   langChipDone: { backgroundColor: colors.primaryLight },
   langChipActive: { borderColor: colors.primary, backgroundColor: colors.white },
-  langChipText: { fontSize: 12, color: colors.text, fontFamily: fonts.bodyMedium },
+  langChipText: { fontSize: 12, color: colors.text, fontFamily: appFonts.bodyMedium },
   recordCard: {
     ...glassCard,
     padding: 24,
@@ -416,7 +419,7 @@ const styles = StyleSheet.create({
   },
   recordCircleActive: { backgroundColor: "#fee2e2", borderColor: "rgba(239,68,68,0.35)" },
   recordIcon: { fontSize: 36 },
-  recordLabel: { fontSize: 15, color: colors.text, fontFamily: fonts.bodySemiBold },
+  recordLabel: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold },
   playBtn: {
     backgroundColor: colors.white,
     borderRadius: radius.pill,
@@ -426,13 +429,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  playBtnText: { color: colors.primary, fontSize: 14, fontWeight: "600", fontFamily: fonts.bodySemiBold },
+  playBtnText: { color: colors.primary, fontSize: 14, fontWeight: "600", fontFamily: appFonts.bodySemiBold },
   createBtn: {
     backgroundColor: colors.primary,
     borderRadius: radius.input,
     paddingVertical: 16,
     alignItems: "center",
   },
-  createBtnText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: fonts.bodyBold },
-  creatingHint: { color: colors.textMuted, fontSize: 12, textAlign: "center", marginTop: 12, fontFamily: fonts.body },
+  createBtnText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: appFonts.bodyBold },
+  creatingHint: { color: colors.textMuted, fontSize: 12, textAlign: "center", marginTop: 12, fontFamily: appFonts.body },
 });

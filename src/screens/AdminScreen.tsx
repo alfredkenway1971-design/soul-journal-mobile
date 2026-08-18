@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
@@ -33,6 +34,8 @@ const fmtShort = (iso?: string | null) => {
 
 export default function AdminScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
   const t = useT();
   const [tab, setTab] = useState<Tab>("users");
@@ -294,7 +297,7 @@ export default function AdminScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -303,11 +306,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardGlassStrong, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   deniedCard: { ...glassCard, padding: 28, alignItems: "center" },
   deniedEmoji: { fontSize: 36, marginBottom: 8 },
-  deniedText: { fontSize: 14, color: colors.textMuted, textAlign: "center", fontFamily: fonts.body },
+  deniedText: { fontSize: 14, color: colors.textMuted, textAlign: "center", fontFamily: appFonts.body },
   tabs: {
     flexDirection: "row",
     backgroundColor: "rgba(255,255,255,0.5)",
@@ -317,7 +320,7 @@ const styles = StyleSheet.create({
   },
   tabBtn: { flex: 1, paddingVertical: 10, borderRadius: 999, alignItems: "center" },
   tabBtnActive: { backgroundColor: "rgba(255,255,255,0.85)" },
-  tabText: { fontSize: 13, color: colors.textMuted, fontFamily: fonts.bodySemiBold },
+  tabText: { fontSize: 13, color: colors.textMuted, fontFamily: appFonts.bodySemiBold },
   search: {
     backgroundColor: "rgba(255,255,255,0.6)",
     borderRadius: 999,
@@ -327,10 +330,10 @@ const styles = StyleSheet.create({
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.glassBorder,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
     marginBottom: 12,
   },
-  count: { fontSize: 12, color: colors.textMuted, marginBottom: 8, fontFamily: fonts.bodyMedium },
+  count: { fontSize: 12, color: colors.textMuted, marginBottom: 8, fontFamily: appFonts.bodyMedium },
   userCard: {
     ...glassCard,
     flexDirection: "row",
@@ -343,12 +346,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(29,129,237,0.12)",
     alignItems: "center", justifyContent: "center",
   },
-  userAvatarText: { fontSize: 14, color: colors.primary, fontWeight: "700", fontFamily: fonts.bodyBold },
-  userName: { fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold },
-  userEmail: { fontSize: 12, color: colors.textMuted, marginTop: 1, fontFamily: fonts.body },
-  userMeta: { fontSize: 10, color: colors.textFaint, marginTop: 3, fontFamily: fonts.body },
+  userAvatarText: { fontSize: 14, color: colors.primary, fontWeight: "700", fontFamily: appFonts.bodyBold },
+  userName: { fontSize: 14, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  userEmail: { fontSize: 12, color: colors.textMuted, marginTop: 1, fontFamily: appFonts.body },
+  userMeta: { fontSize: 10, color: colors.textFaint, marginTop: 3, fontFamily: appFonts.body },
   badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
-  badgeText: { fontSize: 10, fontWeight: "700", fontFamily: fonts.bodySemiBold },
+  badgeText: { fontSize: 10, fontWeight: "700", fontFamily: appFonts.bodySemiBold },
   grantBtn: {
     backgroundColor: colors.primary,
     borderRadius: 999,
@@ -358,20 +361,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   revokeBtn: { backgroundColor: "#dc2626" },
-  grantText: { color: colors.white, fontSize: 12, fontWeight: "700", fontFamily: fonts.bodySemiBold },
+  grantText: { color: colors.white, fontSize: 12, fontWeight: "700", fontFamily: appFonts.bodySemiBold },
   revenueHero: {
     ...glassCard,
     padding: 26,
     alignItems: "center",
     marginBottom: 14,
   },
-  revenueLabel: { fontSize: 13, color: colors.textMuted, fontFamily: fonts.bodyMedium },
-  revenueTotal: { fontSize: 40, color: colors.primary, fontFamily: fonts.displayBold, marginVertical: 6 },
-  revenueSub: { fontSize: 11, color: colors.textFaint, fontFamily: fonts.body },
+  revenueLabel: { fontSize: 13, color: colors.textMuted, fontFamily: appFonts.bodyMedium },
+  revenueTotal: { fontSize: 40, color: colors.primary, fontFamily: appFonts.displayBold, marginVertical: 6 },
+  revenueSub: { fontSize: 11, color: colors.textFaint, fontFamily: appFonts.body },
   revRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
   revCard: { ...glassCard, flex: 1, padding: 16, alignItems: "center" },
-  revNum: { fontSize: 26, color: colors.text, fontFamily: fonts.displayBold },
-  revLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2, fontFamily: fonts.bodyMedium },
-  sectionHint: { fontSize: 12, color: colors.textMuted, marginBottom: 12, fontFamily: fonts.body },
-  grantedLabel: { fontSize: 11, color: "#7c3aed", fontFamily: fonts.bodySemiBold, marginTop: 2 },
+  revNum: { fontSize: 26, color: colors.text, fontFamily: appFonts.displayBold },
+  revLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2, fontFamily: appFonts.bodyMedium },
+  sectionHint: { fontSize: 12, color: colors.textMuted, marginBottom: 12, fontFamily: appFonts.body },
+  grantedLabel: { fontSize: 11, color: "#7c3aed", fontFamily: appFonts.bodySemiBold, marginTop: 2 },
 });

@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
@@ -24,6 +25,8 @@ const SENTIMENT_LABEL: Record<number, string> = { 1: "Positif", 0: "Neutre", "-1
 
 export default function RelationsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
   const t = useT();
   const [relations, setRelations] = useState<Relation[]>([]);
@@ -135,7 +138,7 @@ export default function RelationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -144,24 +147,24 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardGlassStrong, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   emptyCard: { ...glassCard, padding: 28, alignItems: "center" },
   emptyEmoji: { fontSize: 36, marginBottom: 10 },
-  emptyText: { fontSize: 14, color: colors.textMuted, textAlign: "center", lineHeight: 21, fontFamily: fonts.body },
+  emptyText: { fontSize: 14, color: colors.textMuted, textAlign: "center", lineHeight: 21, fontFamily: appFonts.body },
   card: { ...glassCard, padding: 16, marginBottom: 10 },
   topRow: { flexDirection: "row", alignItems: "center" },
   avatar: {
     width: 42, height: 42, borderRadius: 999,
     backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center",
   },
-  avatarText: { color: colors.white, fontSize: 14, fontWeight: "700", fontFamily: fonts.bodyBold },
-  name: { fontSize: 15, color: colors.text, fontFamily: fonts.bodySemiBold },
-  meta: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
+  avatarText: { color: colors.white, fontSize: 14, fontWeight: "700", fontFamily: appFonts.bodyBold },
+  name: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  meta: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: appFonts.body },
   trend: { fontSize: 22 },
-  insight: { fontSize: 13, color: colors.text, lineHeight: 20, marginTop: 12, fontFamily: fonts.body },
+  insight: { fontSize: 13, color: colors.text, lineHeight: 20, marginTop: 12, fontFamily: appFonts.body },
   hideBtn: { marginTop: 10, alignSelf: "flex-end" },
-  hideText: { fontSize: 12, color: colors.textFaint, fontFamily: fonts.bodyMedium },
+  hideText: { fontSize: 12, color: colors.textFaint, fontFamily: appFonts.bodyMedium },
   restoreBtn: { alignItems: "center", paddingVertical: 14 },
-  restoreText: { fontSize: 13, color: colors.primary, fontFamily: fonts.bodySemiBold },
+  restoreText: { fontSize: 13, color: colors.primary, fontFamily: appFonts.bodySemiBold },
 });

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, TextInput, Alert, ActivityIndicator, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
@@ -7,12 +7,15 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
 
 export default function ProfileSettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
   const t = useT();
   const [displayName, setDisplayName] = useState("");
@@ -213,7 +216,7 @@ function decodeBase64(b64: string): Uint8Array {
   return bytes;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -222,8 +225,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardGlassStrong, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   avatarCard: { ...glassCard, padding: 24, alignItems: "center", marginBottom: 16 },
   avatarImage: { width: 96, height: 96, borderRadius: 999, borderWidth: 2, borderColor: "rgba(255,255,255,0.8)" },
   avatarFallback: {
@@ -231,7 +234,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center",
     borderWidth: 2, borderColor: "rgba(255,255,255,0.8)",
   },
-  avatarText: { color: colors.white, fontSize: 32, fontWeight: "700", fontFamily: fonts.bodyBold },
+  avatarText: { color: colors.white, fontSize: 32, fontWeight: "700", fontFamily: appFonts.bodyBold },
   avatarBtn: {
     backgroundColor: colors.primary,
     borderRadius: radius.pill,
@@ -239,9 +242,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginTop: 14,
   },
-  avatarBtnText: { color: colors.white, fontSize: 13, fontWeight: "700", fontFamily: fonts.bodySemiBold },
+  avatarBtnText: { color: colors.white, fontSize: 13, fontWeight: "700", fontFamily: appFonts.bodySemiBold },
   card: { ...glassCard, padding: 18, marginBottom: 16 },
-  label: { fontSize: 13, color: colors.textMuted, fontFamily: fonts.bodySemiBold, marginBottom: 8 },
+  label: { fontSize: 13, color: colors.textMuted, fontFamily: appFonts.bodySemiBold, marginBottom: 8 },
   input: {
     backgroundColor: colors.white,
     borderRadius: radius.input,
@@ -251,7 +254,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.glassBorder,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },
   chip: {
@@ -263,7 +266,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(29,129,237,0.2)",
   },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { fontSize: 13, color: colors.primary, fontFamily: fonts.bodySemiBold },
+  chipText: { fontSize: 13, color: colors.primary, fontFamily: appFonts.bodySemiBold },
   saveBtn: {
     backgroundColor: colors.primary,
     borderRadius: radius.input,
@@ -271,6 +274,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 14,
   },
-  saveBtnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: fonts.bodyBold },
-  footnote: { fontSize: 12, color: colors.textFaint, textAlign: "center", fontFamily: fonts.body },
+  saveBtnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: appFonts.bodyBold },
+  footnote: { fontSize: 12, color: colors.textFaint, textAlign: "center", fontFamily: appFonts.body },
 });

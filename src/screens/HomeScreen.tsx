@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
@@ -51,6 +52,8 @@ const computeStreak = (dates: string[]): number => {
 
 export default function HomeScreen() {
   const user = useAuthStore((s) => s.user);
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const t = useT();
   const navigation = useNavigation<any>();
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -203,21 +206,21 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 110 },
   headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
   hello: {
     fontSize: 30,
     color: colors.text,
-    fontFamily: fonts.displayBold,
+    fontFamily: appFonts.displayBold,
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 14,
     color: colors.textMuted,
     marginTop: 4,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
   avatar: {
     width: 44,
@@ -229,7 +232,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.7)",
   },
-  avatarText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: fonts.bodyBold },
+  avatarText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: appFonts.bodyBold },
   recapCard: {
     ...glassCard,
     padding: 18,
@@ -239,7 +242,7 @@ const styles = StyleSheet.create({
   recapTitle: {
     fontSize: 16,
     color: colors.text,
-    fontFamily: fonts.display,
+    fontFamily: appFonts.display,
   },
   statsRow: { flexDirection: "row", alignItems: "center" },
   stat: { flex: 1, alignItems: "center" },
@@ -247,14 +250,14 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 17,
     color: colors.text,
-    fontFamily: fonts.bodyBold,
+    fontFamily: appFonts.bodyBold,
     marginBottom: 2,
   },
   statLabel: {
     fontSize: 11,
     color: colors.textMuted,
     textAlign: "center",
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
   insightCard: {
     ...glassCard,
@@ -266,13 +269,13 @@ const styles = StyleSheet.create({
   insightBadge: {
     fontSize: 13,
     color: colors.primary,
-    fontFamily: fonts.bodyBold,
+    fontFamily: appFonts.bodyBold,
   },
   insightText: {
     fontSize: 14,
     lineHeight: 21,
     color: colors.text,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
   soulMirrorCard: {
     ...glassCard,
@@ -291,8 +294,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   soulMirrorEmoji: { fontSize: 22 },
-  soulMirrorTitle: { fontSize: 15, color: colors.text, fontFamily: fonts.bodySemiBold },
-  soulMirrorDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
+  soulMirrorTitle: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  soulMirrorDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: appFonts.body },
   soulMirrorArrow: { fontSize: 18, color: colors.primary, fontWeight: "700" },
   quickCard: {
     flexDirection: "row",
@@ -314,15 +317,15 @@ const styles = StyleSheet.create({
   quickTitle: {
     fontSize: 15,
     color: colors.text,
-    fontFamily: fonts.bodySemiBold,
+    fontFamily: appFonts.bodySemiBold,
   },
-  quickDesc: { fontSize: 13, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
+  quickDesc: { fontSize: 13, color: colors.textMuted, marginTop: 2, fontFamily: appFonts.body },
   quickArrow: { fontSize: 18, color: colors.primary, fontWeight: "700" },
   sectionTitle: {
     fontSize: 17,
     color: colors.text,
-    fontFamily: fonts.display,
+    fontFamily: appFonts.display,
     marginBottom: 12,
   },
-  empty: { color: colors.textMuted, fontSize: 14, textAlign: "center", marginTop: 24, fontFamily: fonts.body },
+  empty: { color: colors.textMuted, fontSize: 14, textAlign: "center", marginTop: 24, fontFamily: appFonts.body },
 });

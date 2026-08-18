@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { View, Text, FlatList, StyleSheet, RefreshControl } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, fonts } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
@@ -16,6 +17,8 @@ interface Entry {
 
 export default function LibraryScreen() {
   const user = useAuthStore((s) => s.user);
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const t = useT();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [count, setCount] = useState<number | null>(null);
@@ -65,15 +68,15 @@ export default function LibraryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 110 },
   headerRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16 },
   title: {
     fontSize: 26,
     color: colors.text,
-    fontFamily: fonts.displayBold,
+    fontFamily: appFonts.displayBold,
   },
-  count: { fontSize: 13, color: colors.textMuted, fontFamily: fonts.bodyMedium },
-  empty: { color: colors.textMuted, fontSize: 14, textAlign: "center", marginTop: 24, fontFamily: fonts.body },
+  count: { fontSize: 13, color: colors.textMuted, fontFamily: appFonts.bodyMedium },
+  empty: { color: colors.textMuted, fontSize: 14, textAlign: "center", marginTop: 24, fontFamily: appFonts.body },
 });

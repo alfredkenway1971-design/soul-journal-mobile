@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
@@ -27,6 +28,8 @@ const WEEKDAYS = ["D", "L", "M", "M", "J", "V", "S"];
 
 export default function CalendarScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
   const t = useT();
   const [month, setMonth] = useState(() => new Date());
@@ -158,7 +161,7 @@ export default function CalendarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -167,8 +170,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardGlassStrong, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   monthBar: {
     ...glassCard,
     flexDirection: "row",
@@ -178,15 +181,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 14,
   },
-  monthArrow: { fontSize: 28, color: colors.primary, fontFamily: fonts.bodyBold, paddingHorizontal: 8 },
-  monthLabel: { fontSize: 15, color: colors.text, fontFamily: fonts.displayBold },
+  monthArrow: { fontSize: 28, color: colors.primary, fontFamily: appFonts.bodyBold, paddingHorizontal: 8 },
+  monthLabel: { fontSize: 15, color: colors.text, fontFamily: appFonts.displayBold },
   calendarCard: {
     ...glassCard,
     padding: 12,
     marginBottom: 16,
   },
   weekRow: { flexDirection: "row", marginBottom: 6 },
-  weekDay: { flex: 1, textAlign: "center", fontSize: 11, color: colors.textFaint, fontFamily: fonts.bodySemiBold },
+  weekDay: { flex: 1, textAlign: "center", fontSize: 11, color: colors.textFaint, fontFamily: appFonts.bodySemiBold },
   grid: { flexDirection: "row", flexWrap: "wrap" },
   cell: {
     width: "14.28%",
@@ -196,11 +199,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   cellSelected: { backgroundColor: colors.primaryLight },
-  dayNum: { fontSize: 13, color: colors.text, fontFamily: fonts.bodyMedium },
+  dayNum: { fontSize: 13, color: colors.text, fontFamily: appFonts.bodyMedium },
   dayMood: { fontSize: 13, marginTop: 1 },
   todayDot: { width: 5, height: 5, borderRadius: 999, backgroundColor: colors.primary, marginTop: 2 },
-  sectionLabel: { fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold, marginBottom: 10 },
-  empty: { color: colors.textMuted, fontSize: 13, textAlign: "center", paddingVertical: 12, fontFamily: fonts.body },
+  sectionLabel: { fontSize: 14, color: colors.text, fontFamily: appFonts.bodySemiBold, marginBottom: 10 },
+  empty: { color: colors.textMuted, fontSize: 13, textAlign: "center", paddingVertical: 12, fontFamily: appFonts.body },
   entryCard: {
     ...glassCard,
     flexDirection: "row",
@@ -209,6 +212,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   entryMood: { fontSize: 20, marginRight: 12 },
-  entryTitle: { flex: 1, fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold },
+  entryTitle: { flex: 1, fontSize: 14, color: colors.text, fontFamily: appFonts.bodySemiBold },
   entryArrow: { fontSize: 16, color: colors.textFaint },
 });

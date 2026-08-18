@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, Switch, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { useT } from "@/store/settingsStore";
 import { getReminderPrefs, setReminderPrefs, scheduleReminder, requestNotificationPermission } from "@/lib/notifications";
 
@@ -10,6 +11,8 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 export default function RemindersScreen() {
   const navigation = useNavigation();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const t = useT();
   const [enabled, setEnabled] = useState(false);
   const [hour, setHour] = useState(20);
@@ -123,7 +126,7 @@ export default function RemindersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -137,19 +140,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   card: {
     ...glassCard,
     padding: 18,
     marginBottom: 14,
   },
   toggleRow: { flexDirection: "row", alignItems: "center" },
-  toggleTitle: { fontSize: 15, color: colors.text, fontFamily: fonts.bodySemiBold },
-  toggleDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
-  sectionTitle: { fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold, marginBottom: 4 },
-  timeLabel: { fontSize: 34, color: colors.primary, fontFamily: fonts.displayBold, marginVertical: 6 },
-  pickerLabel: { fontSize: 12, color: colors.textMuted, fontFamily: fonts.bodyMedium, marginTop: 10, marginBottom: 6 },
+  toggleTitle: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  toggleDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: appFonts.body },
+  sectionTitle: { fontSize: 14, color: colors.text, fontFamily: appFonts.bodySemiBold, marginBottom: 4 },
+  timeLabel: { fontSize: 34, color: colors.primary, fontFamily: appFonts.displayBold, marginVertical: 6 },
+  pickerLabel: { fontSize: 12, color: colors.textMuted, fontFamily: appFonts.bodyMedium, marginTop: 10, marginBottom: 6 },
   pickerRow: { flexDirection: "row", gap: 6 },
   pill: {
     backgroundColor: colors.primaryLight,
@@ -159,6 +162,6 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   pillActive: { backgroundColor: colors.primary },
-  pillText: { fontSize: 13, color: colors.text, fontFamily: fonts.body },
-  footnote: { fontSize: 11, color: colors.textFaint, textAlign: "center", marginTop: 8, lineHeight: 16, fontFamily: fonts.body },
+  pillText: { fontSize: 13, color: colors.text, fontFamily: appFonts.body },
+  footnote: { fontSize: 11, color: colors.textFaint, textAlign: "center", marginTop: 8, lineHeight: 16, fontFamily: appFonts.body },
 });

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, TextInput,
 } from "react-native";
@@ -8,6 +8,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Haptics from "expo-haptics";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
@@ -31,8 +32,9 @@ interface EntryDetail {
   created_at: string;
   enhanced_text: string | null;
   original_transcription: string | null;
-  detected_language: string | null;
-  playback_language: string | null;
+  soul_reflection?: string | null;
+  detected_language?: string | null;
+  playback_language?: string | null;
 }
 
 type RootStackParamList = {
@@ -56,6 +58,8 @@ const fmtDate = (iso: string) => {
 
 export default function EntryDetailScreen() {
   const route = useRoute<EntryDetailRoute>();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const navigation = useNavigation();
   const user = useAuthStore((s) => s.user);
   const t = useT();
@@ -66,6 +70,7 @@ export default function EntryDetailScreen() {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState("");
   const [enhancing, setEnhancing] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(false);
   const playerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
 
   useEffect(() => {
@@ -77,7 +82,7 @@ export default function EntryDetailScreen() {
     const { data } = await supabase
       .from("journal_entries")
       .select(
-        "id, title, mood, created_at, enhanced_text, original_transcription, detected_language, playback_language"
+        "id, title, mood, created_at, enhanced_text, original_transcription, detected_language, playback_language, soul_reflection"
       )
       .eq("id", route.params.id)
       .maybeSingle();
@@ -426,23 +431,57 @@ export default function EntryDetailScreen() {
               </View>
             )}
           </View>
+
+          {/* Original Transcription (collapsible, web parity) */}
+          {entry.original_transcription && (
+            <View style={[styles.originalCard, shadows.soft]}>
+              <Pressable style={styles.originalHeader} onPress={() => setShowOriginal((v) => !v)}>
+                <Text style={styles.originalTitle}>Original Transcription</Text>
+                <Text style={styles.originalChevron}>{showOriginal ? "▲" : "▼"}</Text>
+              </Pressable>
+              {showOriginal && (
+                <Text style={styles.originalText}>{entry.original_transcription}</Text>
+              )}
+            </View>
+          )}
+
+          {/* Soul Mirror Reflection (web parity) */}
+          {entry.soul_reflection && (() => {
+            const modeMatch = entry.soul_reflection!.match(/^\[(NURTURE|CHALLENGE|BLEND)\]/i);
+            const mode = modeMatch ? modeMatch[1].toLowerCase() : "blend";
+            const reflectionText = modeMatch
+              ? entry.soul_reflection!.slice(modeMatch[0].length)
+              : entry.soul_reflection!;
+            const modeLabel = mode === "nurture" ? "NURTURE" : mode === "challenge" ? "CHALLENGE" : "BLEND";
+            return (
+              <View style={[styles.reflectionCard, shadows.card]}>
+                <View style={styles.reflectionHeader}>
+                  <Text style={styles.reflectionTitle}>✨ Réflexion du miroir</Text>
+                  <View style={styles.reflectionBadge}>
+                    <Text style={styles.reflectionBadgeText}>{modeLabel}</Text>
+                  </View>
+                </View>
+                <Text style={styles.reflectionText}>{reflectionText}</Text>
+              </View>
+            );
+          })()}
         </ScrollView>
       )}
     </LinearGradient>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16 },
-  missing: { color: colors.textMuted, fontSize: 15, fontFamily: fonts.body },
+  missing: { color: colors.textMuted, fontSize: 15, fontFamily: appFonts.body },
   backBtn: {
     backgroundColor: colors.primary,
     borderRadius: radius.input,
     paddingHorizontal: 24,
     paddingVertical: 10,
   },
-  backBtnText: { color: colors.white, fontFamily: fonts.bodySemiBold },
+  backBtnText: { color: colors.white, fontFamily: appFonts.bodySemiBold },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: {
     flexDirection: "row",
@@ -460,14 +499,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
   iconBtnTextDanger: { fontSize: 18 },
   headerTitle: {
     flex: 1,
     textAlign: "center",
     fontSize: 18,
     color: colors.text,
-    fontFamily: fonts.displayBold,
+    fontFamily: appFonts.displayBold,
     paddingHorizontal: 8,
   },
   metaCard: {
@@ -478,8 +517,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  metaDate: { fontSize: 13, color: colors.textMuted, fontFamily: fonts.bodyMedium, flex: 1 },
-  metaMood: { fontSize: 13, color: colors.text, fontFamily: fonts.bodySemiBold },
+  metaDate: { fontSize: 13, color: colors.textMuted, fontFamily: appFonts.bodyMedium, flex: 1 },
+  metaMood: { fontSize: 13, color: colors.text, fontFamily: appFonts.bodySemiBold },
   playCard: {
     ...glassCard,
     flexDirection: "row",
@@ -496,8 +535,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   playIcon: { fontSize: 22 },
-  playTitle: { fontSize: 15, color: colors.text, fontFamily: fonts.bodySemiBold },
-  playDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
+  playTitle: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  playDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: appFonts.body },
   bodyCard: {
     ...glassCard,
     padding: 20,
@@ -511,9 +550,9 @@ const styles = StyleSheet.create({
   bodyHeaderTitle: {
     fontSize: 15,
     color: colors.text,
-    fontFamily: fonts.display,
+    fontFamily: appFonts.display,
   },
-  editBtn: { fontSize: 13, color: colors.primary, fontFamily: fonts.bodySemiBold },
+  editBtn: { fontSize: 13, color: colors.primary, fontFamily: appFonts.bodySemiBold },
   editInput: {
     backgroundColor: colors.white,
     borderRadius: radius.input,
@@ -524,7 +563,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.glassBorder,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
   actionsRow: {
     flexDirection: "row",
@@ -541,13 +580,62 @@ const styles = StyleSheet.create({
     borderColor: "rgba(29,129,237,0.2)",
   },
   actionPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
-  actionBtnText: { fontSize: 12, color: colors.primary, fontFamily: fonts.bodySemiBold },
-  actionPrimaryText: { fontSize: 12, color: colors.white, fontFamily: fonts.bodyBold },
-  actionCancelText: { fontSize: 14, color: colors.textFaint, fontFamily: fonts.bodyBold },
+  actionBtnText: { fontSize: 12, color: colors.primary, fontFamily: appFonts.bodySemiBold },
+  actionPrimaryText: { fontSize: 12, color: colors.white, fontFamily: appFonts.bodyBold },
+  actionCancelText: { fontSize: 14, color: colors.textFaint, fontFamily: appFonts.bodyBold },
+  originalCard: {
+    ...glassCard,
+    marginTop: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 6,
+  },
+  originalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+  },
+  originalTitle: { fontSize: 13, color: colors.textMuted, fontFamily: appFonts.bodySemiBold },
+  originalChevron: { fontSize: 10, color: colors.textFaint },
+  originalText: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: colors.textMuted,
+    paddingBottom: 14,
+    fontFamily: appFonts.body,
+  },
+  reflectionCard: {
+    ...glassCard,
+    padding: 18,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: "rgba(29,129,237,0.18)",
+  },
+  reflectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  reflectionTitle: { fontSize: 14, color: colors.primary, fontFamily: appFonts.displayBold },
+  reflectionBadge: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  reflectionBadgeText: { fontSize: 10, color: colors.primary, fontWeight: "700", fontFamily: appFonts.bodyBold },
+  reflectionText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.text,
+    fontStyle: "italic",
+    fontFamily: appFonts.body,
+  },
   bodyText: {
     fontSize: 16,
     lineHeight: 25,
     color: colors.text,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
 });

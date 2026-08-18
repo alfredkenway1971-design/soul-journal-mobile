@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,12 +12,15 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
 import { signInWithGoogle } from "@/lib/oauth";
 
 export default function AuthScreen() {
   const { signIn, signUp } = useAuthStore();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const t = useT();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -102,14 +105,14 @@ export default function AuthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   container: { flexGrow: 1, justifyContent: "center", padding: 24 },
   logo: {
     fontSize: 34,
     color: colors.primary,
     textAlign: "center",
-    fontFamily: fonts.displayBold,
+    fontFamily: appFonts.displayBold,
   },
   tagline: {
     fontSize: 15,
@@ -118,7 +121,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 32,
     lineHeight: 22,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
   card: {
     ...glassCard,
@@ -128,7 +131,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: colors.text,
     marginBottom: 16,
-    fontFamily: fonts.display,
+    fontFamily: appFonts.display,
   },
   input: {
     backgroundColor: colors.white,
@@ -140,7 +143,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: colors.glassBorder,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
   button: {
     backgroundColor: colors.primary,
@@ -149,7 +152,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 4,
   },
-  buttonText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: fonts.bodyBold },
+  buttonText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: appFonts.bodyBold },
   googleButton: {
     backgroundColor: colors.white,
     borderRadius: radius.input,
@@ -159,7 +162,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  googleText: { color: colors.text, fontSize: 15, fontWeight: "600", fontFamily: fonts.bodySemiBold },
-  switchText: { color: colors.primary, textAlign: "center", fontSize: 14, fontWeight: "600", fontFamily: fonts.bodySemiBold },
-  footnote: { color: colors.textFaint, textAlign: "center", marginTop: 24, fontSize: 12, fontFamily: fonts.body },
+  googleText: { color: colors.text, fontSize: 15, fontWeight: "600", fontFamily: appFonts.bodySemiBold },
+  switchText: { color: colors.primary, textAlign: "center", fontSize: 14, fontWeight: "600", fontFamily: appFonts.bodySemiBold },
+  footnote: { color: colors.textFaint, textAlign: "center", marginTop: 24, fontSize: 12, fontFamily: appFonts.body },
 });

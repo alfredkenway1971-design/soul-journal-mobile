@@ -1,7 +1,8 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { colors, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { useT } from "@/store/settingsStore";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -30,6 +31,8 @@ const fmtDate = (iso: string) => {
 export default memo(function EntryCard({ entry }: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const t = useT();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
 
   return (
     <Pressable
@@ -47,7 +50,7 @@ export default memo(function EntryCard({ entry }: Props) {
   );
 });
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   card: {
     ...glassCard,
     padding: 16,
@@ -57,7 +60,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textFaint,
     marginBottom: 6,
-    fontFamily: fonts.bodyMedium,
+    fontFamily: appFonts.bodyMedium,
   },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title: {
@@ -66,7 +69,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     flex: 1,
     paddingRight: 8,
-    fontFamily: fonts.bodySemiBold,
+    fontFamily: appFonts.bodySemiBold,
   },
   mood: { fontSize: 20 },
 });

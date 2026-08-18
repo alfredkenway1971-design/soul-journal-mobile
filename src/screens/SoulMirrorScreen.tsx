@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
@@ -6,6 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT, useSettingsStore } from "@/store/settingsStore";
@@ -31,6 +32,8 @@ const monthLabel = (d: Date, lang: string) =>
 
 export default function SoulMirrorScreen() {
   const navigation = useNavigation();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
   const t = useT();
   const language = useSettingsLang();
@@ -251,7 +254,7 @@ function useSettingsLang() {
   return useSettingsStore((s) => s.language);
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
@@ -265,8 +268,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   monthScroller: { marginBottom: 18 },
   monthRow: { gap: 8, paddingRight: 8 },
   monthChip: {
@@ -278,9 +281,9 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
   },
   monthChipActive: { borderColor: colors.primary, backgroundColor: colors.white },
-  monthChipText: { fontSize: 13, color: colors.textMuted, fontFamily: fonts.bodyMedium },
+  monthChipText: { fontSize: 13, color: colors.textMuted, fontFamily: appFonts.bodyMedium },
   loadingBox: { alignItems: "center", paddingVertical: 60, gap: 12 },
-  loadingText: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.body },
+  loadingText: { color: colors.textMuted, fontSize: 14, fontFamily: appFonts.body },
   portraitCard: {
     ...glassCard,
     padding: 22,
@@ -288,7 +291,7 @@ const styles = StyleSheet.create({
   chapter: {
     fontSize: 19,
     color: colors.primary,
-    fontFamily: fonts.displayBold,
+    fontFamily: appFonts.displayBold,
     textAlign: "center",
     marginBottom: 14,
     lineHeight: 26,
@@ -300,10 +303,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  moodPillText: { fontSize: 12, color: colors.primary, fontFamily: fonts.bodySemiBold },
+  moodPillText: { fontSize: 12, color: colors.primary, fontFamily: appFonts.bodySemiBold },
   section: { marginBottom: 14 },
-  sectionTitle: { fontSize: 14, color: colors.text, fontFamily: fonts.display, marginBottom: 6 },
-  sectionText: { fontSize: 14, lineHeight: 21, color: colors.text, fontFamily: fonts.body },
+  sectionTitle: { fontSize: 14, color: colors.text, fontFamily: appFonts.display, marginBottom: 6 },
+  sectionText: { fontSize: 14, lineHeight: 21, color: colors.text, fontFamily: appFonts.body },
   regenerateBtn: {
     marginTop: 8,
     alignItems: "center",
@@ -313,12 +316,12 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
     backgroundColor: colors.white,
   },
-  regenerateText: { color: colors.primary, fontSize: 14, fontWeight: "600", fontFamily: fonts.bodySemiBold },
+  regenerateText: { color: colors.primary, fontSize: 14, fontWeight: "600", fontFamily: appFonts.bodySemiBold },
   disclaimer: {
     fontSize: 11,
     color: colors.textFaint,
     textAlign: "center",
     marginTop: 16,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
 });

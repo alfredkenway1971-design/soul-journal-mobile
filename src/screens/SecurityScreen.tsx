@@ -1,16 +1,19 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, TextInput, Alert, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/store/settingsStore";
 import { usePinStore } from "@/store/pinStore";
 
 export default function SecurityScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const t = useT();
   const hasPin = usePinStore((s) => s.hasPin);
   const [current, setCurrent] = useState("");
@@ -125,7 +128,7 @@ export default function SecurityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -134,17 +137,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardGlassStrong, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   card: { ...glassCard, padding: 18, marginBottom: 14 },
   rowTop: { flexDirection: "row", alignItems: "center" },
   rowEmoji: { fontSize: 26 },
-  rowTitle: { fontSize: 15, color: colors.text, fontFamily: fonts.bodySemiBold },
-  rowDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
+  rowTitle: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  rowDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: appFonts.body },
   linkBtn: { marginTop: 12 },
-  linkText: { fontSize: 13, color: colors.primary, fontFamily: fonts.bodySemiBold },
-  cardTitle: { fontSize: 15, color: colors.text, fontFamily: fonts.displayBold, marginBottom: 14 },
-  label: { fontSize: 12, color: colors.textMuted, fontFamily: fonts.bodySemiBold, marginBottom: 6, marginTop: 10 },
+  linkText: { fontSize: 13, color: colors.primary, fontFamily: appFonts.bodySemiBold },
+  cardTitle: { fontSize: 15, color: colors.text, fontFamily: appFonts.displayBold, marginBottom: 14 },
+  label: { fontSize: 12, color: colors.textMuted, fontFamily: appFonts.bodySemiBold, marginBottom: 6, marginTop: 10 },
   input: {
     backgroundColor: colors.white,
     borderRadius: radius.input,
@@ -154,7 +157,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.glassBorder,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
   saveBtn: {
     backgroundColor: colors.primary,
@@ -163,6 +166,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 16,
   },
-  saveBtnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: fonts.bodyBold },
-  footnote: { fontSize: 11, color: colors.textFaint, textAlign: "center", marginTop: 8, lineHeight: 16, fontFamily: fonts.body },
+  saveBtnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: appFonts.bodyBold },
+  footnote: { fontSize: 11, color: colors.textFaint, textAlign: "center", marginTop: 8, lineHeight: 16, fontFamily: appFonts.body },
 });

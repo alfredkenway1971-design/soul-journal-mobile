@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
@@ -19,6 +20,8 @@ const WEEKDAY_LABELS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
 export default function InsightsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
   const t = useT();
   const [weekly, setWeekly] = useState<{ day: string; avg: number; mood: string | null }[]>([]);
@@ -131,7 +134,7 @@ export default function InsightsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -140,23 +143,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardGlassStrong, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   card: { ...glassCard, padding: 18, marginBottom: 14 },
-  cardTitle: { fontSize: 15, color: colors.text, fontFamily: fonts.displayBold },
-  cardSub: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
-  cardBody: { fontSize: 13, color: colors.textMuted, marginTop: 8, lineHeight: 19, fontFamily: fonts.body },
+  cardTitle: { fontSize: 15, color: colors.text, fontFamily: appFonts.displayBold },
+  cardSub: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: appFonts.body },
+  cardBody: { fontSize: 13, color: colors.textMuted, marginTop: 8, lineHeight: 19, fontFamily: appFonts.body },
   chart: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 16, height: 130 },
   chartCol: { flex: 1, alignItems: "center" },
   chartBarWrap: { flex: 1, justifyContent: "flex-end", width: 22 },
   chartBar: { width: 22, borderRadius: 6, backgroundColor: colors.primary },
-  chartLabel: { fontSize: 10, color: colors.textFaint, marginTop: 6, fontFamily: fonts.bodyMedium },
-  chartVal: { fontSize: 9, color: colors.textMuted, marginTop: 1, fontFamily: fonts.body },
-  empty: { color: colors.textMuted, fontSize: 13, marginTop: 10, fontFamily: fonts.body },
+  chartLabel: { fontSize: 10, color: colors.textFaint, marginTop: 6, fontFamily: appFonts.bodyMedium },
+  chartVal: { fontSize: 9, color: colors.textMuted, marginTop: 1, fontFamily: appFonts.body },
+  empty: { color: colors.textMuted, fontSize: 13, marginTop: 10, fontFamily: appFonts.body },
   distRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   distEmoji: { fontSize: 18, marginRight: 8, width: 26 },
-  distLabel: { fontSize: 13, color: colors.text, fontFamily: fonts.bodyMedium, width: 80 },
+  distLabel: { fontSize: 13, color: colors.text, fontFamily: appFonts.bodyMedium, width: 80 },
   distBarWrap: { flex: 1, height: 12, backgroundColor: colors.primaryLight, borderRadius: 6, overflow: "hidden" },
   distBar: { height: 12, borderRadius: 6 },
-  distCount: { fontSize: 13, color: colors.textMuted, fontFamily: fonts.bodySemiBold, marginLeft: 8, width: 24, textAlign: "right" },
+  distCount: { fontSize: 13, color: colors.textMuted, fontFamily: appFonts.bodySemiBold, marginLeft: 8, width: 24, textAlign: "right" },
 });

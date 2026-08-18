@@ -1,14 +1,18 @@
 import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
+import { useMemo } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
-import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { colors, radius, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { useT } from "@/store/settingsStore";
 import { useThemeStore, THEME_OPTIONS } from "@/store/themeStore";
 
 export default function ThemesScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const t = useT();
   const theme = useThemeStore((s) => s.theme);
   const setTheme = useThemeStore((s) => s.setTheme);
@@ -57,7 +61,7 @@ export default function ThemesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -66,15 +70,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardGlassStrong, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
-  sectionLabel: { fontSize: 13, color: colors.textMuted, marginBottom: 10, fontFamily: fonts.bodySemiBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
+  sectionLabel: { fontSize: 13, color: colors.textMuted, marginBottom: 10, fontFamily: appFonts.bodySemiBold },
   card: { ...glassCard, padding: 8, marginBottom: 16 },
   optionRow: { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: radius.input },
   optionRowActive: { backgroundColor: "rgba(255,255,255,0.7)" },
   swatch: { width: 36, height: 36, borderRadius: 10, marginRight: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.6)" },
-  optionLabel: { fontSize: 15, color: colors.text, fontFamily: fonts.bodySemiBold },
-  optionSub: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
+  optionLabel: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  optionSub: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: appFonts.body },
   check: { fontSize: 18, color: colors.primary, fontWeight: "700" },
-  footnote: { fontSize: 11, color: colors.textFaint, textAlign: "center", fontFamily: fonts.body },
+  footnote: { fontSize: 11, color: colors.textFaint, textAlign: "center", fontFamily: appFonts.body },
 });

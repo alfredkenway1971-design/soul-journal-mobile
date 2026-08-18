@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, Share } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Print from "expo-print";
@@ -7,6 +7,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
@@ -26,6 +27,8 @@ const escapeHtml = (s: string) =>
 
 export default function BookBuilderScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
   const isPremium = useSubscriptionStore((s) => s.isPremium);
   const [cover, setCover] = useState<(typeof COVERS)[number]["id"]>("nebula");
@@ -219,7 +222,7 @@ export default function BookBuilderScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -228,25 +231,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardGlassStrong, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   infoCard: { ...glassCard, padding: 18, marginBottom: 18 },
-  infoTitle: { fontSize: 15, color: colors.text, fontFamily: fonts.displayBold, marginBottom: 6 },
-  infoText: { fontSize: 13, color: colors.textMuted, lineHeight: 19, fontFamily: fonts.body },
-  sectionLabel: { fontSize: 13, color: colors.textMuted, marginBottom: 10, fontFamily: fonts.bodySemiBold },
+  infoTitle: { fontSize: 15, color: colors.text, fontFamily: appFonts.displayBold, marginBottom: 6 },
+  infoText: { fontSize: 13, color: colors.textMuted, lineHeight: 19, fontFamily: appFonts.body },
+  sectionLabel: { fontSize: 13, color: colors.textMuted, marginBottom: 10, fontFamily: appFonts.bodySemiBold },
   coverRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 24 },
   coverCard: { width: "47%", borderRadius: radius.card, padding: 10, backgroundColor: "rgba(255,255,255,0.5)", borderWidth: 2, borderColor: "transparent" },
   coverCardActive: { borderColor: colors.primary },
   coverSwatch: { height: 90, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   coverLetter: { fontSize: 30 },
-  coverLabel: { fontSize: 13, color: colors.text, textAlign: "center", marginTop: 8, fontFamily: fonts.bodySemiBold },
+  coverLabel: { fontSize: 13, color: colors.text, textAlign: "center", marginTop: 8, fontFamily: appFonts.bodySemiBold },
   building: { alignItems: "center", paddingVertical: 30 },
-  buildingText: { fontSize: 14, color: colors.textMuted, marginTop: 12, fontFamily: fonts.body },
+  buildingText: { fontSize: 14, color: colors.textMuted, marginTop: 12, fontFamily: appFonts.body },
   buildBtn: {
     backgroundColor: colors.primary,
     borderRadius: radius.input,
     paddingVertical: 16,
     alignItems: "center",
   },
-  buildText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: fonts.bodyBold },
+  buildText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: appFonts.bodyBold },
 });

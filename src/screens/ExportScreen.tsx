@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Print from "expo-print";
@@ -6,6 +6,7 @@ import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import { useNavigation } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
@@ -31,6 +32,8 @@ const fmtDate = (iso: string) => {
 
 export default function ExportScreen() {
   const navigation = useNavigation();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
   const t = useT();
   const [exporting, setExporting] = useState(false);
@@ -126,7 +129,7 @@ export default function ExportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -140,22 +143,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   card: {
     ...glassCard,
     padding: 24,
     alignItems: "center",
   },
   cardEmoji: { fontSize: 40, marginBottom: 10 },
-  cardTitle: { fontSize: 17, color: colors.text, fontFamily: fonts.displayBold, textAlign: "center" },
+  cardTitle: { fontSize: 17, color: colors.text, fontFamily: appFonts.displayBold, textAlign: "center" },
   cardDesc: {
     fontSize: 13,
     color: colors.textMuted,
     textAlign: "center",
     marginTop: 8,
     lineHeight: 20,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
   exportBtn: {
     backgroundColor: colors.primary,
@@ -164,6 +167,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     marginTop: 18,
   },
-  exportBtnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: fonts.bodyBold },
-  footnote: { fontSize: 11, color: colors.textFaint, textAlign: "center", marginTop: 14, fontFamily: fonts.body },
+  exportBtnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: appFonts.bodyBold },
+  footnote: { fontSize: 11, color: colors.textFaint, textAlign: "center", marginTop: 14, fontFamily: appFonts.body },
 });

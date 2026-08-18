@@ -1,19 +1,28 @@
+import { useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
-import { colors, radius, fonts, glassCard, shadows } from "@/theme";
-import { useT } from "@/store/settingsStore";
-import { useFontStore, FONT_OPTIONS } from "@/store/fontStore";
-import { useAppFonts } from "@/hooks/useAppFonts";
+import { colors, radius, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
+import { useFontStore, FONT_OPTIONS, fontFamilies } from "@/store/fontStore";
 
 export default function FontsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const t = useT();
-  const display = useFontStore((s) => s.display);
-  const setDisplay = useFontStore((s) => s.setDisplay);
+  const font = useFontStore((s) => s.font);
+  const fontSize = useFontStore((s) => s.fontSize);
+  const setFont = useFontStore((s) => s.setFont);
+  const setFontSize = useFontStore((s) => s.setFontSize);
   const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
+  const [preview, setPreview] = useState("Une écriture élégante");
+
+  const previewFamilies = fontFamilies(font);
+  const previewDisplay = previewFamilies.display;
+  const previewBody = previewFamilies.body;
+
+  const SIZES = [14, 16, 18, 20, 22];
 
   return (
     <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
@@ -26,29 +35,53 @@ export default function FontsScreen() {
           <View style={{ width: 40 }} />
         </View>
 
+        {/* Live preview */}
         <View style={[styles.previewCard, shadows.card]}>
-          <Text style={[styles.previewTitle, { fontFamily: appFonts.displayBold }]}>
-            {display === "caveat" ? "Une écriture élégante" : display === "inter" ? "Un style moderne" : "Une écriture élégante"}
+          <Text style={[styles.previewTitle, { fontFamily: previewDisplay, fontSize }]}>
+            {preview}
           </Text>
-          <Text style={styles.previewBody}>
-            Les titres changent instantanément — le corps du texte reste lisible.
+          <Text style={[styles.previewBody, { fontFamily: previewBody, fontSize: Math.max(12, fontSize - 2) }]}>
+            AaBbCc 123 — le corps du texte suit cette police.
           </Text>
+          <Text style={styles.previewHint}>La police s'applique à toute l'application.</Text>
         </View>
 
-        <View style={[styles.card, shadows.card]}>
-          {FONT_OPTIONS.map((f) => {
-            const active = display === f.key;
+        {/* Font size */}
+        <Text style={styles.sectionLabel}>Taille du texte</Text>
+        <View style={[styles.sizeRow, shadows.soft]}>
+          {SIZES.map((s) => {
+            const active = fontSize === s;
             return (
               <Pressable
-                key={f.key}
+                key={s}
+                style={[styles.sizeChip, active && styles.sizeChipActive]}
+                onPress={() => setFontSize(s)}
+              >
+                <Text style={[styles.sizeText, active && { color: colors.white, fontWeight: "700" }]}>{s}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* All 16 fonts */}
+        <Text style={styles.sectionLabel}>Police</Text>
+        <View style={[styles.card, shadows.card]}>
+          {FONT_OPTIONS.map((f) => {
+            const active = font === f.id;
+            const fam = fontFamilies(f.id);
+            return (
+              <Pressable
+                key={f.id}
                 style={[styles.optionRow, active && styles.optionRowActive]}
-                onPress={() => setDisplay(f.key)}
+                onPress={() => setFont(f.id)}
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.optionLabel, { fontFamily: f.key === "caveat" ? "Caveat_700Bold" : f.key === "inter" ? "Inter_700Bold" : "PlayfairDisplay_700Bold" }]}>
-                    {f.label}
+                  <Text style={[styles.optionSample, { fontFamily: fam.display, fontSize: 18 }]}>
+                    {f.name}
                   </Text>
-                  <Text style={styles.optionSub}>{f.native}</Text>
+                  <Text style={[styles.optionMeta, { fontFamily: fam.body }]}>
+                    {f.family}
+                  </Text>
                 </View>
                 {active && <Text style={styles.check}>✓</Text>}
               </Pressable>
@@ -60,24 +93,46 @@ export default function FontsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
   iconBtn: {
     width: 40, height: 40, borderRadius: 999,
-    backgroundColor: colors.cardGlassStrong, alignItems: "center", justifyContent: "center",
-    borderWidth: 1, borderColor: colors.glassBorder,
+    backgroundColor: "rgba(255,255,255,0.7)", alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: "rgba(148,163,184,0.4)",
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
-  previewCard: { ...glassCard, padding: 22, alignItems: "center", marginBottom: 16 },
-  previewTitle: { fontSize: 24, color: colors.text, textAlign: "center", marginBottom: 8 },
-  previewBody: { fontSize: 13, color: colors.textMuted, textAlign: "center", lineHeight: 19, fontFamily: fonts.body },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
+  previewCard: {
+    ...glassCard,
+    padding: 24,
+    alignItems: "center",
+    marginBottom: 18,
+  },
+  previewTitle: { color: colors.text, textAlign: "center", marginBottom: 10 },
+  previewBody: { color: colors.textMuted, textAlign: "center", fontFamily: appFonts.body },
+  previewHint: { fontSize: 11, color: colors.textFaint, marginTop: 12, fontFamily: appFonts.body },
+  sectionLabel: { fontSize: 13, color: colors.textMuted, marginBottom: 10, fontFamily: appFonts.bodySemiBold },
+  sizeRow: {
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.6)",
+    borderRadius: radius.input,
+    padding: 6,
+    marginBottom: 18,
+  },
+  sizeChip: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: radius.input,
+    alignItems: "center",
+  },
+  sizeChipActive: { backgroundColor: colors.primary },
+  sizeText: { fontSize: 14, color: colors.textMuted, fontFamily: appFonts.body },
   card: { ...glassCard, padding: 8, marginBottom: 16 },
   optionRow: { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: radius.input },
-  optionRowActive: { backgroundColor: colors.primaryLight },
-  optionLabel: { fontSize: 17, color: colors.text },
-  optionSub: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
+  optionRowActive: { backgroundColor: "rgba(29,129,237,0.10)" },
+  optionSample: { color: colors.text },
+  optionMeta: { fontSize: 11, color: colors.textFaint, marginTop: 2 },
   check: { fontSize: 18, color: colors.primary, fontWeight: "700" },
 });

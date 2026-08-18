@@ -1,8 +1,20 @@
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts, PlayfairDisplay_600SemiBold, PlayfairDisplay_700Bold } from "@expo-google-fonts/playfair-display";
-import { Caveat_600SemiBold, Caveat_700Bold } from "@expo-google-fonts/caveat";
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
+import { Caveat_600SemiBold, Caveat_700Bold } from "@expo-google-fonts/caveat";
+import { DancingScript_400Regular, DancingScript_500Medium, DancingScript_600SemiBold, DancingScript_700Bold } from "@expo-google-fonts/dancing-script";
+import { ShadowsIntoLight_400Regular } from "@expo-google-fonts/shadows-into-light";
+import { Sacramento_400Regular } from "@expo-google-fonts/sacramento";
+import { Kalam_400Regular, Kalam_700Bold } from "@expo-google-fonts/kalam";
+import { AlexBrush_400Regular } from "@expo-google-fonts/alex-brush";
+import { EuphoriaScript_400Regular } from "@expo-google-fonts/euphoria-script";
+import { GreatVibes_400Regular } from "@expo-google-fonts/great-vibes";
+import { Tangerine_400Regular, Tangerine_700Bold } from "@expo-google-fonts/tangerine";
+import { PatrickHand_400Regular } from "@expo-google-fonts/patrick-hand";
+import { PetitFormalScript_400Regular } from "@expo-google-fonts/petit-formal-script";
+import { Satisfy_400Regular } from "@expo-google-fonts/satisfy";
+import { Arizonia_400Regular } from "@expo-google-fonts/arizonia";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useFontStore } from "@/store/fontStore";
@@ -27,12 +39,29 @@ export default function App() {
   const [fontsLoaded] = useFonts({
     PlayfairDisplay_600SemiBold,
     PlayfairDisplay_700Bold,
-    Caveat_600SemiBold,
-    Caveat_700Bold,
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    Caveat_600SemiBold,
+    Caveat_700Bold,
+    DancingScript_400Regular,
+    DancingScript_500Medium,
+    DancingScript_600SemiBold,
+    DancingScript_700Bold,
+    ShadowsIntoLight_400Regular,
+    Sacramento_400Regular,
+    Kalam_400Regular,
+    Kalam_700Bold,
+    AlexBrush_400Regular,
+    EuphoriaScript_400Regular,
+    GreatVibes_400Regular,
+    Tangerine_400Regular,
+    Tangerine_700Bold,
+    PatrickHand_400Regular,
+    PetitFormalScript_400Regular,
+    Satisfy_400Regular,
+    Arizonia_400Regular,
   });
 
   useEffect(() => {

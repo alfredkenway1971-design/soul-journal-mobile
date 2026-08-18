@@ -1,9 +1,10 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import {
   View, Text, Pressable, StyleSheet, ScrollView, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore } from "@/store/settingsStore";
@@ -35,6 +36,8 @@ interface SoulProfile {
 
 export default function OnboardingScreen() {
   const user = useAuthStore((s) => s.user);
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
 
   const [step, setStep] = useState(0); // 0=lang, 1-6=questions, 7=worldview, 8=analyzing, 9=results
@@ -208,14 +211,14 @@ export default function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 24, paddingBottom: 60 },
   progressWrap: { flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: 24 },
   progressDot: { width: 8, height: 8, borderRadius: 999, backgroundColor: colors.glassBorder },
   progressDotActive: { backgroundColor: colors.primary },
-  title: { fontSize: 22, color: colors.text, fontFamily: fonts.displayBold, marginBottom: 6 },
-  subtitle: { fontSize: 14, color: colors.textMuted, marginBottom: 20, lineHeight: 20, fontFamily: fonts.body },
+  title: { fontSize: 22, color: colors.text, fontFamily: appFonts.displayBold, marginBottom: 6 },
+  subtitle: { fontSize: 14, color: colors.textMuted, marginBottom: 20, lineHeight: 20, fontFamily: appFonts.body },
   stepBadge: {
     alignSelf: "flex-start",
     backgroundColor: colors.primaryLight,
@@ -224,14 +227,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     fontSize: 12,
     color: colors.primary,
-    fontFamily: fonts.bodySemiBold,
+    fontFamily: appFonts.bodySemiBold,
     marginBottom: 10,
     overflow: "hidden",
   },
   card: { ...glassCard, padding: 16, marginBottom: 16 },
   langRow: { flexDirection: "row", alignItems: "center", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.glassBorder },
   langFlag: { fontSize: 20, marginRight: 12 },
-  langName: { fontSize: 15, color: colors.text, fontFamily: fonts.bodyMedium },
+  langName: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodyMedium },
   input: {
     backgroundColor: colors.white,
     borderRadius: radius.input,
@@ -241,18 +244,18 @@ const styles = StyleSheet.create({
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.glassBorder,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
   },
   wvRow: { flexDirection: "row", alignItems: "center", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.glassBorder },
   wvRowActive: { backgroundColor: colors.primaryLight, borderRadius: radius.input, paddingHorizontal: 10 },
   wvEmoji: { fontSize: 20, marginRight: 12 },
-  wvLabel: { fontSize: 15, color: colors.text, fontFamily: fonts.body },
+  wvLabel: { fontSize: 15, color: colors.text, fontFamily: appFonts.body },
   analyzing: { alignItems: "center", paddingVertical: 60 },
-  analyzingText: { fontSize: 16, color: colors.text, fontFamily: fonts.bodySemiBold, marginTop: 16 },
-  analyzingSub: { fontSize: 13, color: colors.textMuted, marginTop: 6, fontFamily: fonts.body },
-  cardLabel: { fontSize: 12, color: colors.primary, fontFamily: fonts.bodySemiBold, marginBottom: 6, textTransform: "uppercase" },
-  cardText: { fontSize: 14, lineHeight: 21, color: colors.text, fontFamily: fonts.body },
-  strength: { fontSize: 14, color: colors.text, fontFamily: fonts.body, marginTop: 4 },
+  analyzingText: { fontSize: 16, color: colors.text, fontFamily: appFonts.bodySemiBold, marginTop: 16 },
+  analyzingSub: { fontSize: 13, color: colors.textMuted, marginTop: 6, fontFamily: appFonts.body },
+  cardLabel: { fontSize: 12, color: colors.primary, fontFamily: appFonts.bodySemiBold, marginBottom: 6, textTransform: "uppercase" },
+  cardText: { fontSize: 14, lineHeight: 21, color: colors.text, fontFamily: appFonts.body },
+  strength: { fontSize: 14, color: colors.text, fontFamily: appFonts.body, marginTop: 4 },
   nextBtn: {
     backgroundColor: colors.primary,
     borderRadius: radius.input,
@@ -260,5 +263,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  nextText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: fonts.bodyBold },
+  nextText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: appFonts.bodyBold },
 });

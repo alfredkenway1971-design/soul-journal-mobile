@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, TextInput, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { usePinStore } from "@/store/pinStore";
 
 export default function PinSettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const { hasPin, setPin, removePin, verifyPin } = usePinStore();
   const [mode, setMode] = useState<"create" | "remove">("create");
   const [pin, setPinInput] = useState("");
@@ -108,7 +111,7 @@ export default function PinSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -117,11 +120,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardGlassStrong, alignItems: "center", justifyContent: "center",
     borderWidth: 1, borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   card: { ...glassCard, padding: 20 },
-  title: { fontSize: 17, color: colors.text, fontFamily: fonts.displayBold },
-  desc: { fontSize: 13, color: colors.textMuted, marginTop: 6, lineHeight: 19, fontFamily: fonts.body },
+  title: { fontSize: 17, color: colors.text, fontFamily: appFonts.displayBold },
+  desc: { fontSize: 13, color: colors.textMuted, marginTop: 6, lineHeight: 19, fontFamily: appFonts.body },
   modeRow: { flexDirection: "row", gap: 8, marginTop: 14 },
   modeBtn: {
     backgroundColor: colors.primaryLight,
@@ -130,7 +133,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   modeBtnActive: { backgroundColor: colors.primary },
-  modeText: { fontSize: 13, color: colors.primary, fontFamily: fonts.bodySemiBold },
+  modeText: { fontSize: 13, color: colors.primary, fontFamily: appFonts.bodySemiBold },
   input: {
     backgroundColor: colors.white,
     borderRadius: radius.input,
@@ -140,7 +143,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.glassBorder,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
     marginTop: 14,
     textAlign: "center",
     letterSpacing: 6,
@@ -152,5 +155,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 16,
   },
-  btnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: fonts.bodyBold },
+  btnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: appFonts.bodyBold },
 });

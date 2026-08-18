@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { useT } from "@/store/settingsStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { initBilling, getProducts, subscribe, restorePurchases, PRODUCT_IDS } from "@/lib/billing";
 
 export default function PricingScreen() {
   const navigation = useNavigation();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const t = useT();
   const isPremium = useSubscriptionStore((s) => s.isPremium);
   const [monthlyPrice, setMonthlyPrice] = useState("$9.99");
@@ -124,7 +127,7 @@ export default function PricingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -138,8 +141,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   hero: {
     ...glassCard,
     padding: 24,
@@ -147,8 +150,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   heroEmoji: { fontSize: 34, marginBottom: 8 },
-  heroTitle: { fontSize: 18, color: colors.text, fontFamily: fonts.displayBold, textAlign: "center" },
-  heroDesc: { fontSize: 13, color: colors.textMuted, textAlign: "center", marginTop: 6, lineHeight: 19, fontFamily: fonts.body },
+  heroTitle: { fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold, textAlign: "center" },
+  heroDesc: { fontSize: 13, color: colors.textMuted, textAlign: "center", marginTop: 6, lineHeight: 19, fontFamily: appFonts.body },
   tierCard: {
     ...glassCard,
     padding: 20,
@@ -167,21 +170,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
   },
-  saveBadgeText: { color: colors.white, fontSize: 11, fontWeight: "700", fontFamily: fonts.bodyBold },
+  saveBadgeText: { color: colors.white, fontSize: 11, fontWeight: "700", fontFamily: appFonts.bodyBold },
   tierTop: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
-  tierName: { fontSize: 16, color: colors.text, fontFamily: fonts.displayBold },
-  tierPrice: { fontSize: 24, color: colors.text, fontFamily: fonts.bodyBold },
-  tierPer: { fontSize: 13, color: colors.textMuted, fontFamily: fonts.body },
-  tierDesc: { fontSize: 12, color: colors.textMuted, marginTop: 8, fontFamily: fonts.body },
+  tierName: { fontSize: 16, color: colors.text, fontFamily: appFonts.displayBold },
+  tierPrice: { fontSize: 24, color: colors.text, fontFamily: appFonts.bodyBold },
+  tierPer: { fontSize: 13, color: colors.textMuted, fontFamily: appFonts.body },
+  tierDesc: { fontSize: 12, color: colors.textMuted, marginTop: 8, fontFamily: appFonts.body },
   restoreBtn: { alignItems: "center", paddingVertical: 14 },
-  restoreText: { color: colors.primary, fontSize: 14, fontWeight: "600", fontFamily: fonts.bodySemiBold },
-  footnote: { fontSize: 11, color: colors.textFaint, textAlign: "center", marginTop: 8, lineHeight: 16, fontFamily: fonts.body },
+  restoreText: { color: colors.primary, fontSize: 14, fontWeight: "600", fontFamily: appFonts.bodySemiBold },
+  footnote: { fontSize: 11, color: colors.textFaint, textAlign: "center", marginTop: 8, lineHeight: 16, fontFamily: appFonts.body },
   activeCard: {
     ...glassCard,
     padding: 32,
     alignItems: "center",
   },
   activeEmoji: { fontSize: 44, marginBottom: 10 },
-  activeTitle: { fontSize: 20, color: colors.text, fontFamily: fonts.displayBold },
-  activeDesc: { fontSize: 14, color: colors.textMuted, marginTop: 6, fontFamily: fonts.body },
+  activeTitle: { fontSize: 20, color: colors.text, fontFamily: appFonts.displayBold },
+  activeDesc: { fontSize: 14, color: colors.textMuted, marginTop: 6, fontFamily: appFonts.body },
 });

@@ -4,7 +4,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, fonts } from "@/theme";
+import { colors } from "@/theme";
+import { useAppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
@@ -78,6 +79,7 @@ const navTheme = {
 
 function MainTabs() {
   const t = useT();
+  const appFonts = useAppFonts();
   const TABS = [
     { name: "Home", component: HomeScreen, icon: "home-outline" as const, iconActive: "home" as const, label: t("nav.home") },
     { name: "Record", component: RecordScreen, icon: "mic-outline" as const, iconActive: "mic" as const, label: t("nav.record") },
@@ -109,7 +111,7 @@ function MainTabs() {
           shadowRadius: 20,
           elevation: 8,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600", fontFamily: fonts.bodySemiBold },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "600", fontFamily: appFonts.bodySemiBold },
       }}
     >
       {TABS.map((tab) => (

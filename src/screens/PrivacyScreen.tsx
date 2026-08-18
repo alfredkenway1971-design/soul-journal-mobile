@@ -1,11 +1,15 @@
 import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
+import { useMemo } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
-import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { colors, radius, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { useT } from "@/store/settingsStore";
 
 export default function PrivacyScreen() {
   const navigation = useNavigation();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const t = useT();
   const isFrench = t("profile.about") === "À propos";
 
@@ -80,7 +84,7 @@ export default function PrivacyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -94,15 +98,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   card: {
     ...glassCard,
     padding: 20,
   },
-  h1: { fontSize: 17, color: colors.text, fontFamily: fonts.displayBold, marginBottom: 4 },
-  updated: { fontSize: 12, color: colors.textFaint, fontFamily: fonts.body, marginBottom: 14 },
-  h2: { fontSize: 14, color: colors.primary, fontFamily: fonts.bodySemiBold, marginTop: 14, marginBottom: 6 },
-  p: { fontSize: 13, lineHeight: 20, color: colors.text, fontFamily: fonts.body, marginBottom: 4 },
+  h1: { fontSize: 17, color: colors.text, fontFamily: appFonts.displayBold, marginBottom: 4 },
+  updated: { fontSize: 12, color: colors.textFaint, fontFamily: appFonts.body, marginBottom: 14 },
+  h2: { fontSize: 14, color: colors.primary, fontFamily: appFonts.bodySemiBold, marginTop: 14, marginBottom: 6 },
+  p: { fontSize: 13, lineHeight: 20, color: colors.text, fontFamily: appFonts.body, marginBottom: 4 },
   b: { fontWeight: "700" },
 });

@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, TextInput, ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
+import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
@@ -21,6 +22,8 @@ const GOAL_CATEGORIES = ["Santé", "Carrière", "Finances", "Relations", "Croiss
 
 export default function GoalsScreen() {
   const navigation = useNavigation();
+  const appFonts = useAppFonts();
+  const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
   const t = useT();
 
@@ -205,7 +208,7 @@ export default function GoalsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
@@ -219,8 +222,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: fonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: fonts.displayBold },
+  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
   addCard: {
     ...glassCard,
     padding: 16,
@@ -235,7 +238,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.glassBorder,
-    fontFamily: fonts.body,
+    fontFamily: appFonts.body,
     marginBottom: 12,
   },
   catRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
@@ -248,21 +251,21 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   catChipActive: { borderColor: colors.primary, backgroundColor: colors.white },
-  catChipText: { fontSize: 12, color: colors.textMuted, fontFamily: fonts.body },
+  catChipText: { fontSize: 12, color: colors.textMuted, fontFamily: appFonts.body },
   addBtn: {
     backgroundColor: colors.primary,
     borderRadius: radius.input,
     paddingVertical: 12,
     alignItems: "center",
   },
-  addBtnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: fonts.bodyBold },
+  addBtnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: appFonts.bodyBold },
   emptyCard: {
     ...glassCard,
     padding: 28,
     alignItems: "center",
   },
   emptyEmoji: { fontSize: 36, marginBottom: 10 },
-  emptyText: { fontSize: 14, color: colors.textMuted, textAlign: "center", lineHeight: 21, fontFamily: fonts.body },
+  emptyText: { fontSize: 14, color: colors.textMuted, textAlign: "center", lineHeight: 21, fontFamily: appFonts.body },
   goalCard: {
     ...glassCard,
     flexDirection: "row",
@@ -271,8 +274,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   goalIcon: { fontSize: 22, marginRight: 12 },
-  goalTitle: { fontSize: 15, color: colors.text, fontFamily: fonts.bodySemiBold },
-  goalCat: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
+  goalTitle: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  goalCat: { fontSize: 12, color: colors.textMuted, marginTop: 2, fontFamily: appFonts.body },
   goalDelete: { fontSize: 16, color: colors.textFaint, paddingHorizontal: 6 },
   scanBtn: {
     backgroundColor: colors.primary,
@@ -281,14 +284,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  scanBtnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: fonts.bodyBold },
+  scanBtnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: appFonts.bodyBold },
   resultCard: {
     ...glassCard,
     padding: 18,
     marginTop: 16,
   },
-  resultTitle: { fontSize: 15, color: colors.text, fontFamily: fonts.display, marginBottom: 10 },
+  resultTitle: { fontSize: 15, color: colors.text, fontFamily: appFonts.display, marginBottom: 10 },
   resultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 6 },
-  resultGoal: { fontSize: 14, color: colors.text, fontFamily: fonts.bodyMedium, flex: 1 },
-  resultCount: { fontSize: 13, color: colors.textMuted, fontFamily: fonts.body },
+  resultGoal: { fontSize: 14, color: colors.text, fontFamily: appFonts.bodyMedium, flex: 1 },
+  resultCount: { fontSize: 13, color: colors.textMuted, fontFamily: appFonts.body },
 });
