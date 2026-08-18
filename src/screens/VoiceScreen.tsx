@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import * as DocumentPicker from "expo-document-picker";
+import { File, Paths } from "expo-file-system";
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
@@ -102,8 +103,17 @@ export default function VoiceScreen() {
     if (playing) { await stopPlayback(); return; }
     if (!recordedUri) return;
     try {
+      // Guard: confirm the file actually exists locally before playing
+      // (content:// URIs from the picker are not playable by expo-audio).
+      const f = new File(recordedUri);
+      if (!f.exists) {
+        Alert.alert("Erreur", "Le fichier audio n'est pas accessible. Réimportez-le.");
+        return;
+      }
       const player = createAudioPlayer({ uri: recordedUri });
       playerRef.current = player;
+      // Route audio to the speaker for playback (recording mode can mute it)
+      try { await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }); } catch {}
       player.addListener("playbackStatusUpdate", (st) => {
         if (st.playbackState === "ended") {
           setPlaying(false);
@@ -111,10 +121,12 @@ export default function VoiceScreen() {
           playerRef.current = null;
         }
       });
-      player.play();
+      await player.play();
       setPlaying(true);
-    } catch {
-      Alert.alert("Error", "Impossible de lire l'échantillon.");
+    } catch (e) {
+      console.warn("play error", e);
+      setPlaying(false);
+      Alert.alert("Erreur", "Impossible de lire l'échantillon. Réessayez avec un autre fichier.");
     }
   };
 
@@ -127,6 +139,8 @@ export default function VoiceScreen() {
         return;
       }
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      // Back to recording mode (playback sets allowsRecording:false)
+      try { await setAudioModeAsync({ allowsRecording: true }); } catch {}
       await recorder.prepareToRecordAsync();
       recorder.record();
       setIsRecording(true);
@@ -181,7 +195,21 @@ export default function VoiceScreen() {
         Alert.alert("Fichier trop volumineux", "Utilisez un audio de moins de 3 Mo (ou raccourcissez l'enregistrement).");
         return;
       }
-      setRecordedUri(asset.uri);
+      // Normalize to a readable file:// URI — DocumentPicker can return a
+      // content:// URI that expo-audio cannot play. Copy into the app cache.
+      let playableUri = asset.uri;
+      try {
+        const ext = (name.split(".").pop() || "mp3").toLowerCase();
+        const dest = new File(Paths.cache, `voice-sample-${Date.now()}.${ext}`);
+        const src = new File(asset.uri);
+        if (src.exists) {
+          src.copy(dest);
+          playableUri = dest.uri;
+        }
+      } catch (e) {
+        console.warn("cache copy failed, using original uri", e);
+      }
+      setRecordedUri(playableUri);
       setUploadedMeta({ name, mime });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
