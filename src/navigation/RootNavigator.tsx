@@ -32,6 +32,8 @@ import ThemesScreen from "@/screens/ThemesScreen";
 import PinSettingsScreen from "@/screens/PinSettingsScreen";
 import GratitudeScreen from "@/screens/GratitudeScreen";
 import RelationsScreen from "@/screens/RelationsScreen";
+import ProfileSettingsScreen from "@/screens/ProfileSettingsScreen";
+import SecurityScreen from "@/screens/SecurityScreen";
 
 export type RootStackParamList = {
   Main: undefined;
@@ -53,6 +55,8 @@ export type RootStackParamList = {
   PinSettings: undefined;
   Gratitude: undefined;
   Relations: undefined;
+  ProfileSettings: undefined;
+  Security: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -178,6 +182,8 @@ export default function RootNavigator() {
           <Stack.Screen name="PinSettings" component={PinSettingsScreen} />
           <Stack.Screen name="Gratitude" component={GratitudeScreen} />
           <Stack.Screen name="Relations" component={RelationsScreen} />
+          <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
+          <Stack.Screen name="Security" component={SecurityScreen} />
         </Stack.Navigator>
         )
       ) : (

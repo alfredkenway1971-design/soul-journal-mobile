@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, StyleSheet, ScrollView, Alert } from "react-native";
+import { View, Text, Pressable, StyleSheet, ScrollView, Alert, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase";
@@ -19,16 +19,18 @@ export default function ProfileScreen() {
   const setLanguage = useSettingsStore((s) => s.setLanguage);
   const isPremium = useSubscriptionStore((s) => s.isPremium);
   const [displayName, setDisplayName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("display_name")
+      .select("display_name, avatar_url")
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (data?.display_name) setDisplayName(data.display_name);
+        if (data?.avatar_url) setAvatarUrl(data.avatar_url);
       });
   }, [user]);
 
@@ -52,16 +54,27 @@ export default function ProfileScreen() {
         <Text style={styles.title}>👤 {t("nav.profile")}</Text>
 
         <View style={[styles.card, shadows.card]}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
+        <Pressable style={styles.profileHeader} onPress={() => navigation.navigate("ProfileSettings")}>
+          <View style={styles.avatarWrap}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarFallback}>
+                <Text style={styles.avatarText}>{initials}</Text>
+              </View>
+            )}
           </View>
-          <Text style={styles.name}>{displayName || "Soul Journal"}</Text>
-          <Text style={styles.email}>{user?.email}</Text>
-          {isPremium && (
-            <View style={styles.premiumBadge}>
-              <Text style={styles.premiumBadgeText}>👑 Premium</Text>
-            </View>
-          )}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.name}>{displayName || "Soul Journal"}</Text>
+            <Text style={styles.email}>{user?.email}</Text>
+            {isPremium && (
+              <View style={styles.premiumBadge}>
+                <Text style={styles.premiumBadgeText}>👑 Premium</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
         </View>
 
         {/* Language switcher */}
@@ -177,6 +190,13 @@ export default function ProfileScreen() {
           <Text style={styles.rowLabel}>Code PIN</Text>
           <Text style={styles.rowArrow}>→</Text>
         </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Security")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>🛡️</Text>
+          </View>
+          <Text style={styles.rowLabel}>Sécurité</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
         <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Admin")}>
           <View style={styles.rowIcon}>
             <Text style={styles.rowEmoji}>🛡️</Text>
@@ -227,18 +247,14 @@ const styles = StyleSheet.create({
     ...glassCard,
     padding: 24,
     marginBottom: 16,
-    alignItems: "center",
   },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 999,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.7)",
+  profileHeader: { flexDirection: "row", alignItems: "center" },
+  avatarWrap: { marginRight: 14 },
+  avatarImage: { width: 56, height: 56, borderRadius: 999, borderWidth: 2, borderColor: "rgba(255,255,255,0.8)" },
+  avatarFallback: {
+    width: 56, height: 56, borderRadius: 999,
+    backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: "rgba(255,255,255,0.8)",
   },
   avatarText: { color: colors.white, fontSize: 22, fontWeight: "700", fontFamily: fonts.bodyBold },
   name: { fontSize: 20, color: colors.text, fontFamily: fonts.displayBold },
