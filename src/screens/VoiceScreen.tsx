@@ -10,7 +10,7 @@ import { useNavigation } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
-import { useT } from "@/store/settingsStore";
+import { useT, useSettingsStore } from "@/store/settingsStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
 import UpgradePrompt from "@/components/UpgradePrompt";
 import { LANGUAGES } from "@/i18n/translations";
@@ -27,6 +27,7 @@ export default function VoiceScreen() {
   const navigation = useNavigation();
   const user = useAuthStore((s) => s.user);
   const t = useT();
+  const language = useSettingsStore((s) => s.language);
   const isPremium = useSubscriptionStore((s) => s.isPremium);
 
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
@@ -48,16 +49,35 @@ export default function VoiceScreen() {
     };
   }, []);
 
-  // Load all clones from the voice_profiles table (cross-device, like the web)
+  // Load all clones from the voice_profiles table (cross-device, like the web),
+  // seeding the legacy profiles.voice_clone_id as the default if the table is empty
   const loadClones = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
       .from("voice_profiles")
       .select("lang, voice_id")
       .eq("user_id", user.id);
-    setClones((data ?? []) as VoiceProfile[]);
+    let list = (data ?? []) as VoiceProfile[];
+    if (list.length === 0) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("voice_clone_id")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (prof?.voice_clone_id) {
+        // Seed under the CURRENT app language (web behavior: seedLang = normalizeLang(language) || 'en')
+        const seedLang = language || "en";
+        list = [{ lang: seedLang, voice_id: prof.voice_clone_id }];
+        // migrate it into voice_profiles so it persists cross-device
+        await supabase.from("voice_profiles").upsert(
+          { user_id: user.id, lang: seedLang, voice_id: prof.voice_clone_id },
+          { onConflict: "user_id,lang" }
+        );
+      }
+    }
+    setClones(list);
     setLoading(false);
-  }, [user]);
+  }, [user, language]);
 
   useEffect(() => {
     loadClones();
@@ -166,7 +186,8 @@ export default function VoiceScreen() {
       if (!json?.voiceId) throw new Error("no voiceId");
 
       // Persist to the voice_profiles table (per-language, cross-device)
-      const lang = targetLang ?? "default";
+      // Default clone is keyed by the CURRENT app language (web behavior), not "default"
+      const lang = targetLang ?? language ?? "en";
       const { error } = await supabase
         .from("voice_profiles")
         .upsert(

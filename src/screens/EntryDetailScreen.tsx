@@ -43,12 +43,12 @@ type EntryDetailRoute = RouteProp<RootStackParamList, "EntryDetail">;
 const fmtDate = (iso: string) => {
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString("fr-CA", {
+    return `${d.toLocaleDateString("fr-CA", {
       weekday: "long",
       day: "numeric",
       month: "long",
       year: "numeric",
-    });
+    })} · ${d.toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}`;
   } catch {
     return iso;
   }
@@ -150,14 +150,25 @@ export default function EntryDetailScreen() {
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("no session");
 
-      // Use the user's cloned voice when available (stored as dashed UUID on the profile)
+      // Voice routing (same as web): entry language → any available → default
       let voiceId: string | null = null;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("voice_clone_id")
-        .eq("id", user!.id)
-        .maybeSingle();
-      if (profile?.voice_clone_id) voiceId = profile.voice_clone_id;
+      const entryLang = (entry as any)?.detected_language || (entry as any)?.playback_language || null;
+      const { data: voices } = await supabase
+        .from("voice_profiles")
+        .select("lang, voice_id")
+        .eq("user_id", user!.id);
+      if (voices && voices.length > 0) {
+        const byLang = voices.find((v) => v.lang === entryLang);
+        voiceId = byLang?.voice_id ?? voices[0].voice_id;
+      }
+      if (!voiceId) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("voice_clone_id")
+          .eq("id", user!.id)
+          .maybeSingle();
+        if (profile?.voice_clone_id) voiceId = profile.voice_clone_id;
+      }
 
       const res = await fetch(GENERATE_VOICE_URL, {
         method: "POST",

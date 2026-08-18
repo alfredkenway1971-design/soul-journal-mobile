@@ -21,7 +21,7 @@ interface Props {
 const fmtDate = (iso: string) => {
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString("fr-CA", { day: "numeric", month: "long" });
+    return `${d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" })} · ${d.toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}`;
   } catch {
     return iso;
   }
