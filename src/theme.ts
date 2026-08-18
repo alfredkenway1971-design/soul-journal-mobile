@@ -45,10 +45,20 @@ export const colors = {
 export const fonts = {
   display: "PlayfairDisplay_600SemiBold",
   displayBold: "PlayfairDisplay_700Bold",
+  displayCaveat: "Caveat_700Bold",
   body: "Inter_400Regular",
   bodyMedium: "Inter_500Medium",
   bodySemiBold: "Inter_600SemiBold",
   bodyBold: "Inter_700Bold",
+};
+
+/** Map a DisplayFont choice to the actual font family (used by useAppFonts). */
+export const DISPLAY_FONT_FAMILY: Record<string, string> = {
+  playfair: "PlayfairDisplay_600SemiBold",
+  playfairBold: "PlayfairDisplay_700Bold",
+  caveat: "Caveat_700Bold",
+  caveatSemi: "Caveat_600SemiBold",
+  inter: "Inter_700Bold",
 };
 
 export const radius = {

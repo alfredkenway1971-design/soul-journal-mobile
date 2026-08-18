@@ -20,6 +20,7 @@ const MOODS = [
 ];
 
 const PROMPTS_URL = "https://soul-journal-seven.vercel.app/api/journaling-prompts";
+const DREAM_URL = "https://soul-journal-seven.vercel.app/api/dream-reflection";
 
 export default function RecordScreen() {
   const user = useAuthStore((s) => s.user);
@@ -36,6 +37,9 @@ export default function RecordScreen() {
   const [prompts, setPrompts] = useState<string[]>([]);
   const [promptsLoading, setPromptsLoading] = useState(false);
   const promptsFetchedRef = useRef(false);
+  const [isDream, setIsDream] = useState(false);
+  const [dreamReflection, setDreamReflection] = useState<string | null>(null);
+  const [dreamLoading, setDreamLoading] = useState(false);
 
   useEffect(() => {
     setAudioModeAsync({ allowsRecording: true });
@@ -130,6 +134,10 @@ export default function RecordScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setText("");
       setMood("fine");
+      if (isDream) {
+        setIsDream(false);
+        generateDreamReflection(content);
+      }
       Alert.alert(`✨ ${t("record.saved")}`, t("record.savedDesc"));
     } catch (e) {
       console.warn("save error", e);
@@ -180,6 +188,43 @@ export default function RecordScreen() {
   const refreshPrompts = async () => {
     setPrompts([]);
     await loadPrompts();
+  };
+
+  const generateDreamReflection = async (dreamText: string) => {
+    if (!user) return;
+    setDreamLoading(true);
+    setDreamReflection(null);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("no session");
+
+      const { data: recent } = await supabase
+        .from("journal_entries")
+        .select("enhanced_text, original_transcription")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      const recentEntries = (recent ?? [])
+        .map((r) => (r.enhanced_text || r.original_transcription || "").substring(0, 300))
+        .filter(Boolean);
+
+      const res = await fetch(DREAM_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ dreamText, recentEntries, language: "French" }),
+      });
+      if (!res.ok) throw new Error(`dream ${res.status}`);
+      const json = await res.json();
+      if (json?.reflection) setDreamReflection(json.reflection);
+    } catch (e) {
+      console.warn("dream error", e);
+    } finally {
+      setDreamLoading(false);
+    }
   };
 
   // Load prompts once per screen visit (blank write screen)
@@ -278,6 +323,26 @@ export default function RecordScreen() {
             );
           })}
         </View>
+
+        {/* Dream toggle */}
+        <Pressable
+          style={[styles.dreamChip, isDream && styles.dreamChipActive]}
+          onPress={() => setIsDream((v) => !v)}
+        >
+          <Text style={styles.dreamChipText}>🌙 {isDream ? "Rêve marqué — retirer" : "Marquer comme un rêve"}</Text>
+        </Pressable>
+
+        {/* Dream reflection result */}
+        {(dreamReflection || dreamLoading) && (
+          <View style={[styles.dreamCard, shadows.card]}>
+            <Text style={styles.dreamTitle}>🌙 Réflexion sur votre rêve</Text>
+            {dreamLoading ? (
+              <ActivityIndicator color={colors.primary} style={{ marginTop: 8 }} />
+            ) : (
+              <Text style={styles.dreamText}>{dreamReflection}</Text>
+            )}
+          </View>
+        )}
 
         <Pressable style={[styles.saveButton, shadows.soft, saving && { opacity: 0.6 }]} onPress={saveEntry} disabled={saving}>
           <Text style={styles.saveText}>{saving ? t("record.saving") : `${t("record.save")} ✨`}</Text>
@@ -382,6 +447,26 @@ const styles = StyleSheet.create({
   moodEmoji: { fontSize: 20 },
   moodLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2, fontFamily: fonts.body },
   moodDot: { width: 5, height: 5, borderRadius: 999, marginTop: 4 },
+  dreamChip: {
+    backgroundColor: colors.cardGlass,
+    borderRadius: radius.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    marginBottom: 16,
+  },
+  dreamChipActive: { backgroundColor: "#fdf3f3", borderColor: "#c9a3b8" },
+  dreamChipText: { fontSize: 13, color: colors.text, fontFamily: fonts.bodySemiBold },
+  dreamCard: {
+    ...glassCard,
+    padding: 18,
+    marginBottom: 16,
+    backgroundColor: "rgba(255,255,255,0.8)",
+  },
+  dreamTitle: { fontSize: 14, color: colors.text, fontFamily: fonts.displayBold, marginBottom: 8 },
+  dreamText: { fontSize: 14, lineHeight: 21, color: colors.text, fontFamily: fonts.body },
   saveButton: {
     backgroundColor: colors.primary,
     borderRadius: radius.input,

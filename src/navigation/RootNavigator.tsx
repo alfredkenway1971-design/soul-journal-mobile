@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts } from "@/theme";
+import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
@@ -22,6 +23,15 @@ import PricingScreen from "@/screens/PricingScreen";
 import RemindersScreen from "@/screens/RemindersScreen";
 import ExportScreen from "@/screens/ExportScreen";
 import AdminScreen from "@/screens/AdminScreen";
+import OnboardingScreen from "@/screens/OnboardingScreen";
+import CalendarScreen from "@/screens/CalendarScreen";
+import InsightsScreen from "@/screens/InsightsScreen";
+import CoachingScreen from "@/screens/CoachingScreen";
+import FontsScreen from "@/screens/FontsScreen";
+import ThemesScreen from "@/screens/ThemesScreen";
+import PinSettingsScreen from "@/screens/PinSettingsScreen";
+import GratitudeScreen from "@/screens/GratitudeScreen";
+import RelationsScreen from "@/screens/RelationsScreen";
 
 export type RootStackParamList = {
   Main: undefined;
@@ -34,6 +44,15 @@ export type RootStackParamList = {
   Reminders: undefined;
   Export: undefined;
   Admin: undefined;
+  Onboarding: undefined;
+  Calendar: undefined;
+  Insights: undefined;
+  Coaching: undefined;
+  Fonts: undefined;
+  Themes: undefined;
+  PinSettings: undefined;
+  Gratitude: undefined;
+  Relations: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -107,11 +126,24 @@ function MainTabs() {
 export default function RootNavigator() {
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
+  const [onboarded, setOnboarded] = useState(true);
   const checkSubscription = useSubscriptionStore((s) => s.checkSubscription);
 
-  // Re-check premium status whenever the user changes
+  // Re-check premium status + onboarding state whenever the user changes
   useEffect(() => {
-    if (user) checkSubscription();
+    if (user) {
+      checkSubscription();
+      supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          setOnboarded(data?.onboarding_completed !== false);
+        });
+    } else {
+      setOnboarded(true);
+    }
   }, [user, checkSubscription]);
 
   if (loading) {
@@ -122,6 +154,11 @@ export default function RootNavigator() {
     <NavigationContainer theme={navTheme}>
       <StatusBar style="dark" />
       {user ? (
+        !onboarded ? (
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          </Stack.Navigator>
+        ) : (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
@@ -133,7 +170,16 @@ export default function RootNavigator() {
           <Stack.Screen name="Reminders" component={RemindersScreen} />
           <Stack.Screen name="Export" component={ExportScreen} />
           <Stack.Screen name="Admin" component={AdminScreen} />
+          <Stack.Screen name="Calendar" component={CalendarScreen} />
+          <Stack.Screen name="Insights" component={InsightsScreen} />
+          <Stack.Screen name="Coaching" component={CoachingScreen} />
+          <Stack.Screen name="Fonts" component={FontsScreen} />
+          <Stack.Screen name="Themes" component={ThemesScreen} />
+          <Stack.Screen name="PinSettings" component={PinSettingsScreen} />
+          <Stack.Screen name="Gratitude" component={GratitudeScreen} />
+          <Stack.Screen name="Relations" component={RelationsScreen} />
         </Stack.Navigator>
+        )
       ) : (
         <AuthScreen />
       )}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
+  View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, TextInput,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
@@ -11,6 +11,8 @@ import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useT } from "@/store/settingsStore";
+
+const ENHANCE_URL = "https://soul-journal-seven.vercel.app/api/enhance-text";
 
 const MOOD_EMOJI: Record<string, string> = {
   happy: "😊",
@@ -61,6 +63,9 @@ export default function EntryDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState("");
+  const [enhancing, setEnhancing] = useState(false);
   const playerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
 
   useEffect(() => {
@@ -205,6 +210,90 @@ export default function EntryDetailScreen() {
 
   const body = entry?.enhanced_text || entry?.original_transcription || "";
 
+  const startEdit = () => {
+    setEditText(body);
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (!entry) return;
+    const next = editText.trim();
+    if (!next) {
+      Alert.alert("Empty entry", t("record.empty"));
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from("journal_entries")
+        .update({ enhanced_text: next })
+        .eq("id", entry.id);
+      if (error) throw error;
+      setEntry({ ...entry, enhanced_text: next });
+      setEditing(false);
+      // Edited text invalidates the cached voice
+      try {
+        const dir = `${FileSystem.documentDirectory}voice-cache/`;
+        const info = await FileSystem.getInfoAsync(`${dir}voice-${entry.id}.mp3`);
+        if (info.exists) await FileSystem.deleteAsync(`${dir}voice-${entry.id}.mp3`);
+      } catch {}
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("✓", t("entry.bodyUpdated"));
+    } catch (e) {
+      console.warn("save edit error", e);
+      Alert.alert("Error", t("entry.bodyFailed"));
+    }
+  };
+
+  const enhanceBody = async (tone: "natural" | "structured") => {
+    if (!entry) return;
+    const source = editText || body;
+    if (!source.trim()) return;
+    setEnhancing(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("no session");
+
+      const res = await fetch(ENHANCE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          text: source,
+          tone,
+          language: (entry as any)?.detected_language || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error(`enhance ${res.status}`);
+      const json = await res.json();
+      if (!json?.enhancedText) throw new Error("no result");
+
+      // Apply the result to the editor AND persist (mirrors web behavior)
+      setEditText(json.enhancedText);
+      const { error } = await supabase
+        .from("journal_entries")
+        .update({ enhanced_text: json.enhancedText })
+        .eq("id", entry.id);
+      if (error) throw error;
+      setEntry({ ...entry, enhanced_text: json.enhancedText });
+      // Invalidate cached voice
+      try {
+        const dir = `${FileSystem.documentDirectory}voice-cache/`;
+        const info = await FileSystem.getInfoAsync(`${dir}voice-${entry.id}.mp3`);
+        if (info.exists) await FileSystem.deleteAsync(`${dir}voice-${entry.id}.mp3`);
+      } catch {}
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("✨", t("entry.enhanced"));
+    } catch (e) {
+      console.warn("enhance error", e);
+      Alert.alert("Error", t("entry.enhanceFailed"));
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
   return (
     <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
       {loading ? (
@@ -265,9 +354,66 @@ export default function EntryDetailScreen() {
             </View>
           </Pressable>
 
-          {/* Body */}
+          {/* Body — editable + AI enhance (matches web "Your Story" card) */}
           <View style={[styles.bodyCard, shadows.card]}>
-            <Text style={styles.bodyText}>{body || t("entry.noContent")}</Text>
+            <View style={styles.bodyHeader}>
+              <Text style={styles.bodyHeaderTitle}>Votre histoire</Text>
+              {!editing && (
+                <Pressable onPress={startEdit} hitSlop={8}>
+                  <Text style={styles.editBtn}>✏️ Modifier</Text>
+                </Pressable>
+              )}
+            </View>
+
+            {editing ? (
+              <TextInput
+                style={styles.editInput}
+                value={editText}
+                onChangeText={setEditText}
+                multiline
+                textAlignVertical="top"
+                placeholder={t("entry.noContent")}
+                placeholderTextColor={colors.textFaint}
+              />
+            ) : (
+              <Text style={styles.bodyText}>{body || t("entry.noContent")}</Text>
+            )}
+
+            {/* Action row */}
+            {!editing && (
+              <View style={styles.actionsRow}>
+                <Pressable style={styles.actionBtn} onPress={startEdit}>
+                  <Text style={styles.actionBtnText}>✏️ {t("entry.editBtn")}</Text>
+                </Pressable>
+                <Pressable style={styles.actionBtn} onPress={() => enhanceBody("natural")} disabled={enhancing}>
+                  <Text style={styles.actionBtnText}>
+                    {enhancing ? t("record.enhancing") : `✨ ${t("entry.enhanceBtn")}`}
+                  </Text>
+                </Pressable>
+                <Pressable style={styles.actionBtn} onPress={() => enhanceBody("structured")} disabled={enhancing}>
+                  <Text style={styles.actionBtnText}>📑 {t("entry.enhanceStructured")}</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {editing && (
+              <View style={styles.actionsRow}>
+                <Pressable style={[styles.actionBtn, styles.actionPrimary]} onPress={saveEdit} disabled={enhancing}>
+                  <Text style={styles.actionPrimaryText}>✓ {t("entry.saveBtn")}</Text>
+                </Pressable>
+                <Pressable style={styles.actionBtn} onPress={() => enhanceBody("natural")} disabled={enhancing}>
+                  <Text style={styles.actionBtnText}>
+                    {enhancing ? t("record.enhancing") : `✨ ${t("entry.enhanceBtn")}`}
+                  </Text>
+                </Pressable>
+                <Pressable style={styles.actionBtn} onPress={() => enhanceBody("structured")} disabled={enhancing}>
+                  <Text style={styles.actionBtnText}>📑 {t("entry.enhanceStructured")}</Text>
+                </Pressable>
+                <Pressable style={styles.actionBtn} onPress={() => setEditing(false)}>
+                  <Text style={styles.actionCancelText}>✕</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
         </ScrollView>
       )}
@@ -345,6 +491,48 @@ const styles = StyleSheet.create({
     ...glassCard,
     padding: 20,
   },
+  bodyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  bodyHeaderTitle: {
+    fontSize: 15,
+    color: colors.text,
+    fontFamily: fonts.display,
+  },
+  editBtn: { fontSize: 13, color: colors.primary, fontFamily: fonts.bodySemiBold },
+  editInput: {
+    backgroundColor: colors.white,
+    borderRadius: radius.input,
+    padding: 14,
+    minHeight: 160,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    fontFamily: fonts.body,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 14,
+  },
+  actionBtn: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "rgba(29,129,237,0.2)",
+  },
+  actionPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
+  actionBtnText: { fontSize: 12, color: colors.primary, fontFamily: fonts.bodySemiBold },
+  actionPrimaryText: { fontSize: 12, color: colors.white, fontFamily: fonts.bodyBold },
+  actionCancelText: { fontSize: 14, color: colors.textFaint, fontFamily: fonts.bodyBold },
   bodyText: {
     fontSize: 16,
     lineHeight: 25,

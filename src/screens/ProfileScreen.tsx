@@ -121,6 +121,62 @@ export default function ProfileScreen() {
           <Text style={styles.rowLabel}>Exporter (PDF)</Text>
           <Text style={styles.rowArrow}>→</Text>
         </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Calendar")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>📅</Text>
+          </View>
+          <Text style={styles.rowLabel}>Calendrier</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Insights")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>📊</Text>
+          </View>
+          <Text style={styles.rowLabel}>Aperçus</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Coaching")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>🎓</Text>
+          </View>
+          <Text style={styles.rowLabel}>Coaching IA</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Gratitude")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>💛</Text>
+          </View>
+          <Text style={styles.rowLabel}>Gratitude</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Relations")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>💞</Text>
+          </View>
+          <Text style={styles.rowLabel}>Relations</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Fonts")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>🔤</Text>
+          </View>
+          <Text style={styles.rowLabel}>Police d'écriture</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Themes")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>🎨</Text>
+          </View>
+          <Text style={styles.rowLabel}>Thèmes</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("PinSettings")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>🔐</Text>
+          </View>
+          <Text style={styles.rowLabel}>Code PIN</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
         <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Admin")}>
           <View style={styles.rowIcon}>
             <Text style={styles.rowEmoji}>🛡️</Text>
