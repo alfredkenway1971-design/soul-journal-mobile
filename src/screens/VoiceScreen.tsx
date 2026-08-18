@@ -16,6 +16,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useT, useSettingsStore } from "@/store/settingsStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
 import UpgradePrompt from "@/components/UpgradePrompt";
+import { fetchVoiceProfiles, saveVoiceProfile, removeVoiceProfile } from "@/lib/voiceProfiles";
 import { LANGUAGES } from "@/i18n/translations";
 
 const CREATE_CLONE_URL = "https://soul-journal-seven.vercel.app/api/create-voice-clone";
@@ -57,15 +58,16 @@ export default function VoiceScreen() {
     };
   }, []);
 
-  // Load all clones from the voice_profiles table (cross-device, like the web),
+  // Load all clones via the edge function (table has no RLS — direct reads fail),
   // seeding the legacy profiles.voice_clone_id as the default if the table is empty
   const loadClones = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("voice_profiles")
-      .select("lang, voice_id")
-      .eq("user_id", user.id);
-    let list = (data ?? []) as VoiceProfile[];
+    let list: VoiceProfile[] = [];
+    try {
+      list = await fetchVoiceProfiles();
+    } catch (e) {
+      console.warn("fetchVoiceProfiles failed", e);
+    }
     if (list.length === 0) {
       const { data: prof } = await supabase
         .from("profiles")
@@ -77,10 +79,11 @@ export default function VoiceScreen() {
         const seedLang = language || "en";
         list = [{ lang: seedLang, voice_id: prof.voice_clone_id }];
         // migrate it into voice_profiles so it persists cross-device
-        await supabase.from("voice_profiles").upsert(
-          { user_id: user.id, lang: seedLang, voice_id: prof.voice_clone_id },
-          { onConflict: "user_id,lang" }
-        );
+        try {
+          await saveVoiceProfile(seedLang, prof.voice_clone_id);
+        } catch (e) {
+          console.warn("seed voice profile failed", e);
+        }
       }
     }
     setClones(list);
@@ -296,16 +299,10 @@ export default function VoiceScreen() {
       const json = await res.json();
       if (!json?.voiceId) throw new Error("no voiceId");
 
-      // Persist to the voice_profiles table (per-language, cross-device)
+      // Persist via the edge function (per-language, cross-device)
       // Default clone is keyed by the CURRENT app language (web behavior), not "default"
       const lang = targetLang ?? language ?? "en";
-      const { error } = await supabase
-        .from("voice_profiles")
-        .upsert(
-          { user_id: user.id, lang, voice_id: json.voiceId, updated_at: new Date().toISOString() },
-          { onConflict: "user_id,lang" }
-        );
-      if (error) throw error;
+      await saveVoiceProfile(lang, json.voiceId);
 
       // Keep the legacy single-clone column in sync for backward compat
       if (!targetLang) {
@@ -335,7 +332,11 @@ export default function VoiceScreen() {
 
   const removeClone = async (lang: string) => {
     if (!user) return;
-    await supabase.from("voice_profiles").delete().eq("user_id", user.id).eq("lang", lang);
+    try {
+      await removeVoiceProfile(lang);
+    } catch (e) {
+      console.warn("removeVoiceProfile failed", e);
+    }
     if (lang === "default") {
       await supabase.from("profiles").update({ voice_clone_id: null }).eq("id", user.id);
     }
