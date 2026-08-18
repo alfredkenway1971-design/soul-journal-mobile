@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import * as DocumentPicker from "expo-document-picker";
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
@@ -37,6 +38,8 @@ export default function VoiceScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
+  // Uploaded-sample metadata (kept so the API receives the file's real type/name)
+  const [uploadedMeta, setUploadedMeta] = useState<{ name: string; mime: string } | null>(null);
   const [playing, setPlaying] = useState(false);
   const [creating, setCreating] = useState(false);
   const [clones, setClones] = useState<VoiceProfile[]>([]);
@@ -151,11 +154,46 @@ export default function VoiceScreen() {
       return;
     }
     setRecordedUri(uri);
+    setUploadedMeta(null); // live recording → default type/name
+  };
+
+  /** Pick an existing audio file (mp3/wav/m4a) to use as the clone sample. */
+  const pickAudio = async () => {
+    try {
+      await stopPlayback();
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ["audio/*"],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (res.canceled || !res.assets?.length) return;
+      const asset = res.assets[0];
+      if (!asset.uri) return;
+      const name = asset.name || "voice_sample";
+      const mime = asset.mimeType || "audio/mpeg";
+      // Fish accepts mp3/wav/m4a/webm — reject unsupported types early
+      if (!/^(audio|application\/octet-stream)/i.test(mime) && !/\.(mp3|wav|m4a|webm|ogg|aac|flac)$/i.test(name)) {
+        Alert.alert("Format non supporté", "Choisissez un fichier audio (mp3, wav, m4a…).");
+        return;
+      }
+      // Vercel serverless body limit ~4.5MB — keep uploads under it (base64 inflates ~33%)
+      if (asset.size && asset.size > 3.2 * 1024 * 1024) {
+        Alert.alert("Fichier trop volumineux", "Utilisez un audio de moins de 3 Mo (ou raccourcissez l'enregistrement).");
+        return;
+      }
+      setRecordedUri(asset.uri);
+      setUploadedMeta({ name, mime });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {
+      console.warn("pick error", e);
+      Alert.alert("Erreur", "Impossible de lire le fichier audio.");
+    }
   };
 
   const createClone = async () => {
     if (!recordedUri) return;
-    if (seconds < 10) {
+    // Live recordings must be >= 10s; uploaded files are trusted (Fish validates them)
+    if (!uploadedMeta && seconds < 10) {
       Alert.alert("Voice clone", "L'échantillon doit durer au moins 10 secondes.");
       return;
     }
@@ -180,8 +218,8 @@ export default function VoiceScreen() {
         body: JSON.stringify({
           audio: base64,
           name: `Voice Clone - ${email}${langLabel ? ` - ${langLabel}` : ""}`,
-          audioType: "audio/mp4",
-          audioName: "voice_sample.m4a",
+          audioType: uploadedMeta?.mime ?? "audio/mp4",
+          audioName: uploadedMeta?.name ?? "voice_sample.m4a",
         }),
       });
       if (!res.ok) throw new Error(`clone ${res.status}`);
@@ -206,6 +244,7 @@ export default function VoiceScreen() {
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setRecordedUri(null);
+      setUploadedMeta(null);
       setTargetLang(null);
       await loadClones();
       Alert.alert("✨ Voix créée !", "Votre voix clonée est maintenant utilisée pour la lecture de vos entrées.");
@@ -285,7 +324,7 @@ export default function VoiceScreen() {
                   <Pressable
                     key={l.code}
                     style={[styles.langChip, has && styles.langChipDone, active && styles.langChipActive]}
-                    onPress={() => { setTargetLang(active ? null : l.code); setRecordedUri(null); }}
+                    onPress={() => { setTargetLang(active ? null : l.code); setRecordedUri(null); setUploadedMeta(null); }}
                   >
                     <Text style={styles.langChipText}>{l.flag} {l.native} {has ? "✓" : ""}</Text>
                   </Pressable>
@@ -296,14 +335,31 @@ export default function VoiceScreen() {
             {/* Recording control */}
             <View style={[styles.recordCard, shadows.card]}>
               {!isRecording ? (
-                <Pressable style={styles.recordBtn} onPress={startRecording}>
-                  <View style={styles.recordCircle}>
-                    <Text style={styles.recordIcon}>{recordedUri ? "🔁" : "🎤"}</Text>
+                <>
+                  <View style={styles.sourceRow}>
+                    <Pressable style={[styles.recordBtn, { flex: 1 }]} onPress={startRecording}>
+                      <View style={styles.recordCircle}>
+                        <Text style={styles.recordIcon}>{recordedUri && !uploadedMeta ? "🔁" : "🎤"}</Text>
+                      </View>
+                      <Text style={styles.recordLabel}>
+                        {recordedUri && !uploadedMeta ? "Ré-enregistrer" : t("record.pressToRecord")}
+                      </Text>
+                    </Pressable>
+                    <Pressable style={[styles.recordBtn, { flex: 1 }]} onPress={pickAudio}>
+                      <View style={[styles.recordCircle, styles.uploadCircle]}>
+                        <Text style={styles.recordIcon}>{uploadedMeta ? "🔁" : "📁"}</Text>
+                      </View>
+                      <Text style={styles.recordLabel}>
+                        {uploadedMeta ? "Choisir un autre" : "Importer un audio"}
+                      </Text>
+                    </Pressable>
                   </View>
-                  <Text style={styles.recordLabel}>
-                    {recordedUri ? "Ré-enregistrer" : t("record.pressToRecord")}
-                  </Text>
-                </Pressable>
+                  {uploadedMeta && (
+                    <Text style={styles.uploadedName} numberOfLines={1}>
+                      📎 {uploadedMeta.name}
+                    </Text>
+                  )}
+                </>
               ) : (
                 <Pressable style={styles.recordBtn} onPress={stopRecording}>
                   <View style={[styles.recordCircle, styles.recordCircleActive]}>
@@ -405,7 +461,8 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  recordBtn: { alignItems: "center", width: "100%" },
+  recordBtn: { alignItems: "center" },
+  sourceRow: { flexDirection: "row", gap: 12 },
   recordCircle: {
     width: 84,
     height: 84,
@@ -418,8 +475,16 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
     borderColor: "rgba(29,129,237,0.25)",
   },
   recordCircleActive: { backgroundColor: "#fee2e2", borderColor: "rgba(239,68,68,0.35)" },
+  uploadCircle: { backgroundColor: "#e8f5e9", borderColor: "rgba(16,185,129,0.3)" },
   recordIcon: { fontSize: 36 },
-  recordLabel: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  recordLabel: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold, textAlign: "center" },
+  uploadedName: {
+    marginTop: 10,
+    fontSize: 12,
+    color: "#059669",
+    textAlign: "center",
+    fontFamily: appFonts.bodyMedium,
+  },
   playBtn: {
     backgroundColor: colors.white,
     borderRadius: radius.pill,
