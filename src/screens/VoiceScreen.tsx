@@ -4,6 +4,7 @@ import { File, Paths } from "expo-file-system";
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAudioRecorder, requestRecordingPermissionsAsync, setAudioModeAsync, createAudioPlayer, RecordingPresets } from "expo-audio";
 import * as Haptics from "expo-haptics";
@@ -93,14 +94,6 @@ export default function VoiceScreen() {
   useEffect(() => {
     loadClones();
   }, [loadClones]);
-
-  // Auto-select the language chip for the CURRENT app language on load, so the
-  // user always sees which language profile they are creating/overwriting
-  // (prevents silent overwrites — e.g. cloning twice both landing on "en").
-  useEffect(() => {
-    if (loading) return;
-    setTargetLang((prev) => prev ?? language ?? "en");
-  }, [loading, language]);
 
   const stopPlayback = async () => {
     const p = playerRef.current;
@@ -357,8 +350,12 @@ export default function VoiceScreen() {
   };
 
   const langName = (code: string) => LANGUAGES.find((l) => l.code === code)?.native ?? (code === "default" ? t("voice.default") : code);
+  const langEnName = (code: string) => LANGUAGES.find((l) => l.code === code)?.name ?? code;
   const langFlag = (code: string) => LANGUAGES.find((l) => l.code === code)?.flag ?? "🌍";
   const clonedLangs = clones.map((c) => c.lang);
+  // Web parity: the recording UI only appears once a language is targeted
+  // (chip tapped / Re-record pressed) or a sample exists.
+  const showRecording = isRecording || !!recordedUri || !!uploadedMeta || targetLang !== null;
 
   return (
     <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
@@ -367,7 +364,10 @@ export default function VoiceScreen() {
           <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.iconBtnText}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>🎙️ {t("profile.voice")}</Text>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>{t("voice.clone")}</Text>
+            <Text style={styles.headerSub}>{t("voice.createClone")}</Text>
+          </View>
           <View style={{ width: 40 }} />
         </View>
 
@@ -380,58 +380,96 @@ export default function VoiceScreen() {
           <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
         ) : (
           <>
-            {/* Clone list (per language, from the DB) */}
+            {/* Voice profiles — one card per language (web parity) */}
             {clones.length > 0 && (
-              <View style={styles.listCard}>
-                <Text style={styles.listTitle}>{t("voice.clonedVoices")}</Text>
+              <>
+                <Text style={styles.sectionTitle}>{t("voice.voiceProfiles")}</Text>
                 {clones.map((c) => (
-                  <View key={c.lang} style={[styles.cloneRow, shadows.soft]}>
-                    <Text style={styles.cloneFlag}>{langFlag(c.lang)}</Text>
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                        <Text style={styles.cloneName}>{langName(c.lang)}</Text>
-                        {c.lang === language && (
-                          <View style={styles.defaultBadge}>
-                            <Text style={styles.defaultBadgeText}>{t("voice.default")}</Text>
-                          </View>
-                        )}
+                  <View key={c.lang} style={[styles.profileCard, shadows.soft]}>
+                    <View style={styles.profileTop}>
+                      <View style={styles.flagAvatar}>
+                        <Text style={styles.flagAvatarText}>{langFlag(c.lang)}</Text>
                       </View>
-                      <Text style={styles.cloneId}>{c.voice_id.slice(0, 8)}…</Text>
+                      <View style={{ flex: 1, marginLeft: 12 }}>
+                        <Text style={styles.profileName}>{langEnName(c.lang)}</Text>
+                        <Text style={styles.profileStatus}>
+                          {c.lang === language ? t("voice.default") : t("voice.ready")}
+                        </Text>
+                      </View>
+                      <Ionicons name="checkmark-circle" size={22} color="#059669" />
                     </View>
-                    <Pressable
-                      style={styles.reRecordBtn}
-                      onPress={() => { setTargetLang(c.lang); setRecordedUri(null); }}
-                    >
-                      <Text style={styles.reRecordText}>{t("voice.reRecord")}</Text>
-                    </Pressable>
-                    <Pressable onPress={() => removeClone(c.lang)} hitSlop={8} style={{ marginLeft: 10 }}>
-                      <Text style={styles.cloneDelete}>🗑️</Text>
-                    </Pressable>
+                    <View style={styles.profileBtns}>
+                      <Pressable
+                        style={[styles.profileBtn, { flex: 1 }]}
+                        onPress={() => { setTargetLang(c.lang); setRecordedUri(null); setUploadedMeta(null); setSampleDuration(null); }}
+                      >
+                        <Ionicons name="mic-outline" size={15} color={colors.primary} />
+                        <Text style={styles.profileBtnText}>{t("voice.reRecord")}</Text>
+                      </Pressable>
+                      <Pressable style={[styles.profileBtn, styles.removeBtn]} onPress={() => removeClone(c.lang)}>
+                        <Ionicons name="trash-outline" size={15} color="#dc2626" />
+                        <Text style={[styles.profileBtnText, styles.removeBtnText]}>{t("voice.remove")}</Text>
+                      </Pressable>
+                    </View>
                   </View>
                 ))}
+              </>
+            )}
+
+            {/* Add a voice in another language (web parity) */}
+            {!showRecording && (
+              <View style={[styles.addCard, shadows.soft]}>
+                <View style={styles.addTitleRow}>
+                  <Ionicons name="language-outline" size={16} color={colors.primary} />
+                  <Text style={styles.addTitle}>{t("voice.addAnother")}</Text>
+                </View>
+                <Text style={styles.addDesc}>
+                  {clones.length === 0 ? t("voice.addAnotherDesc1") : t("voice.addAnotherDesc2")}
+                </Text>
+                <View style={styles.addChips}>
+                  {LANGUAGES.filter((l) => !clonedLangs.includes(l.code)).map((l) => (
+                    <Pressable
+                      key={l.code}
+                      style={styles.addChip}
+                      onPress={() => { setTargetLang(l.code); setRecordedUri(null); setUploadedMeta(null); setSampleDuration(null); }}
+                    >
+                      <Text style={styles.addChipText}>{l.flag} {l.native}</Text>
+                      <Ionicons name="add" size={14} color={colors.primary} />
+                    </Pressable>
+                  ))}
+                </View>
               </View>
             )}
 
-            {/* Language target chips (add a voice in another language) */}
-            <Text style={styles.sectionLabel}>{t("voice.addLangVoice")}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.langRow}>
-              {LANGUAGES.map((l) => {
-                const has = clonedLangs.includes(l.code);
-                const active = targetLang === l.code;
-                return (
-                  <Pressable
-                    key={l.code}
-                    style={[styles.langChip, has && styles.langChipDone, active && styles.langChipActive]}
-                    onPress={() => { setTargetLang(active ? null : l.code); setRecordedUri(null); setUploadedMeta(null); setSampleDuration(null); }}
-                  >
-                    <Text style={styles.langChipText}>{l.flag} {l.native} {has ? "✓" : ""}</Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+            {/* First-time hero (no clones yet) — web parity */}
+            {clones.length === 0 && !showRecording && (
+              <View style={[styles.heroCard, shadows.soft]}>
+                <View style={styles.heroCircle}>
+                  <Text style={styles.heroMic}>🎤</Text>
+                </View>
+                <Text style={styles.heroTitle}>{t("voice.createClone")}</Text>
+                <Text style={styles.heroDesc}>{t("voice.emptyDesc")}</Text>
+                <View style={styles.tipsBox}>
+                  <Text style={styles.tipsTitle}>{t("voice.tipsTitle")}</Text>
+                  {[t("voice.tip1"), t("voice.tip2"), t("voice.tip3"), t("voice.tip4")].map((tip, i) => (
+                    <Text key={i} style={styles.tip}>• {tip}</Text>
+                  ))}
+                </View>
+              </View>
+            )}
 
-            {/* Recording control */}
+            {/* Recording control — shown once a language is targeted or a sample exists (web parity) */}
+            {showRecording && (
             <View style={[styles.recordCard, shadows.card]}>
+              {targetLang && !isRecording && (
+                <View style={styles.recordInWrap}>
+                  <View style={styles.recordInRow}>
+                    <Text style={styles.recordInFlag}>{langFlag(targetLang)}</Text>
+                    <Text style={styles.recordInText}>{t("voice.recordIn")} {langName(targetLang)}</Text>
+                  </View>
+                  <Text style={styles.recordHintText}>{t("voice.recordHint")}</Text>
+                </View>
+              )}
               {!isRecording ? (
                 <>
                   <View style={styles.sourceRow}>
@@ -473,6 +511,7 @@ export default function VoiceScreen() {
                 </Pressable>
               )}
             </View>
+            )}
 
             {/* Create button */}
             {recordedUri && !isRecording && (
@@ -514,7 +553,96 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
     borderColor: colors.glassBorder,
   },
   iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
+  headerTitle: { fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
+  headerCenter: { flex: 1, alignItems: "center" },
+  headerSub: { fontSize: 12, color: colors.textFaint, marginTop: 2, fontFamily: appFonts.body },
+  sectionTitle: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold, marginBottom: 10 },
+  profileCard: {
+    ...glassCard,
+    padding: 14,
+    marginBottom: 10,
+  },
+  profileTop: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  flagAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    backgroundColor: "rgba(29,129,237,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  flagAvatarText: { fontSize: 20 },
+  profileName: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  profileStatus: { fontSize: 12, color: colors.textFaint, marginTop: 2, fontFamily: appFonts.body },
+  profileBtns: { flexDirection: "row", gap: 8 },
+  profileBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: radius.input,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "rgba(29,129,237,0.35)",
+    backgroundColor: "rgba(255,255,255,0.55)",
+  },
+  profileBtnText: { fontSize: 13, color: colors.primary, fontFamily: appFonts.bodySemiBold },
+  removeBtn: { borderColor: "rgba(220,38,38,0.35)" },
+  removeBtnText: { color: "#dc2626" },
+  addCard: {
+    ...glassCard,
+    padding: 16,
+    marginBottom: 16,
+  },
+  addTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
+  addTitle: { fontSize: 14, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  addDesc: { fontSize: 12, color: colors.textMuted, marginBottom: 10, lineHeight: 18, fontFamily: appFonts.body },
+  addChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  addChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.6)",
+    borderWidth: 1,
+    borderColor: "rgba(29,129,237,0.2)",
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  addChipText: { fontSize: 13, color: colors.text, fontFamily: appFonts.bodyMedium },
+  heroCard: {
+    ...glassCard,
+    padding: 24,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  heroCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 999,
+    backgroundColor: "#fef3c7",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  heroMic: { fontSize: 32 },
+  heroTitle: { fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold, textAlign: "center", marginBottom: 6 },
+  heroDesc: { fontSize: 13, color: colors.textMuted, textAlign: "center", lineHeight: 19, fontFamily: appFonts.body },
+  tipsBox: {
+    alignSelf: "stretch",
+    backgroundColor: "rgba(148,163,184,0.10)",
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 14,
+  },
+  tipsTitle: { fontSize: 13, color: colors.text, fontFamily: appFonts.bodySemiBold, marginBottom: 6 },
+  tip: { fontSize: 12, color: colors.textMuted, lineHeight: 19, fontFamily: appFonts.body },
+  recordInWrap: { marginBottom: 14 },
+  recordInRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  recordInFlag: { fontSize: 18 },
+  recordInText: { fontSize: 14, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  recordHintText: { fontSize: 12, color: colors.textFaint, marginTop: 3, fontFamily: appFonts.body },
   listCard: {
     ...glassCard,
     padding: 16,
