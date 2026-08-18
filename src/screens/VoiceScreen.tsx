@@ -312,9 +312,14 @@ export default function VoiceScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setRecordedUri(null);
       setUploadedMeta(null); setSampleDuration(null);
+      const createdLang = targetLang ?? language ?? "en";
+      const createdName = LANGUAGES.find((l) => l.code === createdLang)?.native ?? createdLang;
       setTargetLang(null);
       await loadClones();
-      Alert.alert("✨ Voix créée !", "Votre voix clonée est maintenant utilisée pour la lecture de vos entrées.");
+      Alert.alert(
+        "✨ Voix créée !",
+        `Votre voix ${createdName} est prête. Elle sera utilisée automatiquement pour la lecture des entrées en ${createdName}.`
+      );
     } catch (e: any) {
       console.warn("clone error", e?.message || e);
       const msg = e?.message || "";

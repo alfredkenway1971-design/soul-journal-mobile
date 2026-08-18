@@ -11,7 +11,7 @@ import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
-import { useT } from "@/store/settingsStore";
+import { useT, useSettingsStore } from "@/store/settingsStore";
 
 const ENHANCE_URL = "https://soul-journal-seven.vercel.app/api/enhance-text";
 
@@ -155,16 +155,28 @@ export default function EntryDetailScreen() {
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("no session");
 
-      // Voice routing (same as web): entry language → any available → default
+      // Voice routing: pick the clone whose language matches the ENTRY's
+      // language (per-language clones — e.g. French entry -> French clone).
+      // Fallbacks: entry detected lang -> any clone whose lang exists -> first.
       let voiceId: string | null = null;
-      const entryLang = (entry as any)?.detected_language || (entry as any)?.playback_language || null;
+      const entryLang =
+        (entry as any)?.playback_language ||
+        (entry as any)?.detected_language ||
+        null;
+      const appLang = useSettingsStore.getState().language;
       const { data: voices } = await supabase
         .from("voice_profiles")
         .select("lang, voice_id")
         .eq("user_id", user!.id);
       if (voices && voices.length > 0) {
-        const byLang = voices.find((v) => v.lang === entryLang);
-        voiceId = byLang?.voice_id ?? voices[0].voice_id;
+        // 1) exact entry-language clone
+        voiceId =
+          voices.find((v) => v.lang === entryLang)?.voice_id ??
+          // 2) app-language clone (covers entries recorded pre-language-tagging)
+          voices.find((v) => v.lang === appLang)?.voice_id ??
+          // 3) any clone
+          voices[0]?.voice_id ??
+          null;
       }
       if (!voiceId) {
         const { data: profile } = await supabase

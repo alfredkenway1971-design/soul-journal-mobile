@@ -131,6 +131,7 @@ export default function RecordScreen() {
         mood,
         mood_score: moodObj.score,
         detected_language: detectedLang ?? language,
+        playback_language: detectedLang ?? language,
         created_at: new Date().toISOString(),
       }).select("id");
       if (error) throw error;
