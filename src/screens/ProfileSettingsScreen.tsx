@@ -17,6 +17,8 @@ export default function ProfileSettingsScreen() {
   const t = useT();
   const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [gender, setGender] = useState<string | null>(null);
+  const [interests, setInterests] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -24,11 +26,13 @@ export default function ProfileSettingsScreen() {
     if (!user) return;
     const { data } = await supabase
       .from("profiles")
-      .select("display_name, avatar_url")
+      .select("display_name, avatar_url, gender, interests")
       .eq("id", user.id)
       .maybeSingle();
     if (data?.display_name) setDisplayName(data.display_name);
     if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+    if ((data as any)?.gender) setGender((data as any).gender);
+    if (Array.isArray((data as any)?.interests)) setInterests((data as any).interests);
   }, [user]);
 
   useEffect(() => {
@@ -102,12 +106,15 @@ export default function ProfileSettingsScreen() {
     }
     setSaving(true);
     try {
+      const patch: any = { display_name: name };
+      if (gender) patch.gender = gender;
+      if (interests.length > 0) patch.interests = interests;
       const { error } = await supabase
         .from("profiles")
-        .update({ display_name: name })
+        .update(patch)
         .eq("id", user.id);
       if (error) throw error;
-      Alert.alert("✓", "Nom mis à jour.");
+      Alert.alert("✓", "Profil mis à jour.");
       navigation.goBack();
     } catch (e) {
       console.warn("name error", e);
@@ -116,6 +123,8 @@ export default function ProfileSettingsScreen() {
       setSaving(false);
     }
   };
+
+  const GENDERS = ["Femme", "Homme", "Non-binaire", "Autre"];
 
   return (
     <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
@@ -157,6 +166,34 @@ export default function ProfileSettingsScreen() {
             placeholderTextColor={colors.textFaint}
             autoCapitalize="words"
           />
+
+          {/* Gender */}
+          <Text style={styles.label}>Genre</Text>
+          <View style={styles.chipRow}>
+            {GENDERS.map((g) => {
+              const active = gender === g;
+              return (
+                <Pressable
+                  key={g}
+                  style={[styles.chip, active && styles.chipActive]}
+                  onPress={() => setGender(active ? null : g)}
+                >
+                  <Text style={[styles.chipText, active && { color: colors.white }]}>{g}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Interests */}
+          <Text style={styles.label}>Intérêts (espaces séparés)</Text>
+          <TextInput
+            style={[styles.input, shadows.soft]}
+            value={interests.join(" ")}
+            onChangeText={(v) => setInterests(v.split(/\s+/).filter(Boolean))}
+            placeholder="lecture, nature, sport…"
+            placeholderTextColor={colors.textFaint}
+          />
+
           <Pressable style={[styles.saveBtn, shadows.soft, saving && { opacity: 0.6 }]} onPress={saveName} disabled={saving}>
             <Text style={styles.saveBtnText}>{saving ? "Enregistrement…" : "Enregistrer"}</Text>
           </Pressable>
@@ -216,6 +253,17 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
     fontFamily: fonts.body,
   },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },
+  chip: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "rgba(29,129,237,0.2)",
+  },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { fontSize: 13, color: colors.primary, fontFamily: fonts.bodySemiBold },
   saveBtn: {
     backgroundColor: colors.primary,
     borderRadius: radius.input,

@@ -34,6 +34,7 @@ import GratitudeScreen from "@/screens/GratitudeScreen";
 import RelationsScreen from "@/screens/RelationsScreen";
 import ProfileSettingsScreen from "@/screens/ProfileSettingsScreen";
 import SecurityScreen from "@/screens/SecurityScreen";
+import BookBuilderScreen from "@/screens/BookBuilderScreen";
 
 export type RootStackParamList = {
   Main: undefined;
@@ -57,6 +58,7 @@ export type RootStackParamList = {
   Relations: undefined;
   ProfileSettings: undefined;
   Security: undefined;
+  BookBuilder: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -184,6 +186,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Relations" component={RelationsScreen} />
           <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
           <Stack.Screen name="Security" component={SecurityScreen} />
+          <Stack.Screen name="BookBuilder" component={BookBuilderScreen} />
         </Stack.Navigator>
         )
       ) : (

@@ -127,6 +127,13 @@ export default function ProfileScreen() {
           <Text style={styles.rowLabel}>{t("profile.premium")}</Text>
           <Text style={styles.rowArrow}>→</Text>
         </Pressable>
+        <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("BookBuilder")}>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowEmoji}>📚</Text>
+          </View>
+          <Text style={styles.rowLabel}>Livre (PDF)</Text>
+          <Text style={styles.rowArrow}>→</Text>
+        </Pressable>
         <Pressable style={[styles.row, shadows.soft]} onPress={() => navigation.navigate("Export")}>
           <View style={styles.rowIcon}>
             <Text style={styles.rowEmoji}>📖</Text>
