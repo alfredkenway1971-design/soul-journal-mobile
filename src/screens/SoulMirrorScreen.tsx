@@ -143,7 +143,7 @@ export default function SoulMirrorScreen() {
         }
         const retryJson = await retry.json();
         if (retryJson?.empty) {
-          setPortrait({ emotionalSummary: { text: "No entries this month." } });
+          setPortrait({ emotionalSummary: { text: t("soulMirror.noEntries") } });
           return;
         }
         if (!retryJson?.portrait) throw new Error("no portrait");
@@ -159,7 +159,7 @@ export default function SoulMirrorScreen() {
       }
       const json = await res.json();
       if (json?.empty) {
-        setPortrait({ emotionalSummary: { text: "No entries this month." } });
+        setPortrait({ emotionalSummary: { text: t("soulMirror.noEntries") } });
         return;
       }
       if (!json?.portrait) throw new Error("no portrait");
@@ -173,7 +173,7 @@ export default function SoulMirrorScreen() {
       Alert.alert(
         "Soul Mirror",
         msg.startsWith("mirror") || msg === "no portrait" || msg === "no session" || !msg
-          ? "Impossible de générer le portrait. Réessayez."
+          ? t("soulMirror.failed")
           : msg
       );
     } finally {
@@ -220,13 +220,13 @@ export default function SoulMirrorScreen() {
         {/* Premium gate */}
         {!isPremium ? (
           <UpgradePrompt
-            title="Soul Mirror est une fonction Premium"
-            description="Découvrez votre portrait mensuel — émotions dominantes, schémas cachés, sources de joie et domaine de croissance."
+            title={t("soulMirror.premiumTitle")}
+            description={t("soulMirror.premiumDesc")}
           />
         ) : loading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator color={colors.primary} size="large" />
-            <Text style={styles.loadingText}>Création de votre portrait…</Text>
+            <Text style={styles.loadingText}>{t("soulMirror.creating")}</Text>
           </View>
         ) : portrait ? (
           <View style={[styles.portraitCard, shadows.card]}>
@@ -250,21 +250,21 @@ export default function SoulMirrorScreen() {
 
             {portrait.emotionalSummary?.text && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>💭 Résumé émotionnel</Text>
+                <Text style={styles.sectionTitle}>{t("soulMirror.emotionalSummary")}</Text>
                 <Text style={styles.sectionText}>{portrait.emotionalSummary.text}</Text>
               </View>
             )}
 
             {portrait.hiddenPatterns && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>🔍 Schémas cachés</Text>
+                <Text style={styles.sectionTitle}>{t("soulMirror.hiddenPatterns")}</Text>
                 <Text style={styles.sectionText}>{portrait.hiddenPatterns}</Text>
               </View>
             )}
 
             {portrait.goalProgress && portrait.goalProgress.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>🎯 Progrès des objectifs</Text>
+                <Text style={styles.sectionTitle}>{t("soulMirror.goalProgress")}</Text>
                 {portrait.goalProgress.map((g, i) => (
                   <Text key={i} style={styles.sectionText}>• {g.goal}: {g.status}</Text>
                 ))}
@@ -273,7 +273,7 @@ export default function SoulMirrorScreen() {
 
             {portrait.sourcesOfJoy && portrait.sourcesOfJoy.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>💜 Sources de joie</Text>
+                <Text style={styles.sectionTitle}>{t("soulMirror.sourcesOfJoy")}</Text>
                 {portrait.sourcesOfJoy.map((s, i) => (
                   <Text key={i} style={styles.sectionText}>• {s}</Text>
                 ))}
@@ -282,7 +282,7 @@ export default function SoulMirrorScreen() {
 
             {portrait.growthArea && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>🌱 Domaine de croissance</Text>
+                <Text style={styles.sectionTitle}>{t("soulMirror.growthArea")}</Text>
                 <Text style={styles.sectionText}>{portrait.growthArea}</Text>
               </View>
             )}
@@ -292,13 +292,13 @@ export default function SoulMirrorScreen() {
               setPortrait(null);
               generate();
             }}>
-              <Text style={styles.regenerateText}>🔄 Régénérer</Text>
+              <Text style={styles.regenerateText}>{t("soulMirror.regenerate")}</Text>
             </Pressable>
           </View>
         ) : null}
 
         <Text style={styles.disclaimer}>
-          Cette analyse est basée sur vos entrées, pas un diagnostic médical.
+          {t("soulMirror.disclaimer")}
         </Text>
       </ScrollView>
     </LinearGradient>

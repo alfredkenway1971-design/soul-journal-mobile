@@ -69,7 +69,7 @@ export default function RelationsScreen() {
       if (Array.isArray(json?.relations)) setRelations(json.relations);
     } catch (e) {
       console.warn("relations error", e);
-      Alert.alert("Relations", "Impossible d'analyser. Réessayez.");
+      Alert.alert(t("profile.relations"), t("relations.scanFailed"));
     } finally {
       setLoading(false);
       setScanning(false);
@@ -102,7 +102,7 @@ export default function RelationsScreen() {
           <View style={[styles.emptyCard, shadows.soft]}>
             <Text style={styles.emptyEmoji}>🔒</Text>
             <Text style={styles.emptyText}>
-              L'IA suit les personnes importantes dans vos entrées — vos relations restent privées, visibles seulement par vous.
+              {t("relations.desc")}
             </Text>
           </View>
         ) : (
@@ -130,7 +130,7 @@ export default function RelationsScreen() {
 
         {hidden.length > 0 && (
           <Pressable style={styles.restoreBtn} onPress={() => setHidden([])}>
-            <Text style={styles.restoreText}>Restaurer les relations masquées</Text>
+            <Text style={styles.restoreText}>{t("relations.restore")}</Text>
           </Pressable>
         )}
       </ScrollView>

@@ -7,16 +7,18 @@ import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { useFontStore, FONT_OPTIONS, fontFamilies } from "@/store/fontStore";
+import { useT } from "@/store/settingsStore";
 
 export default function FontsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const t = useT();
   const font = useFontStore((s) => s.font);
   const fontSize = useFontStore((s) => s.fontSize);
   const setFont = useFontStore((s) => s.setFont);
   const setFontSize = useFontStore((s) => s.setFontSize);
   const appFonts = useAppFonts();
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
-  const [preview, setPreview] = useState("Une écriture élégante");
+  const [preview, setPreview] = useState(() => t("fonts.elegant"));
 
   const previewFamilies = fontFamilies(font);
   const previewDisplay = previewFamilies.display;
@@ -31,7 +33,7 @@ export default function FontsScreen() {
           <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.iconBtnText}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>🔤 Police d'écriture</Text>
+          <Text style={styles.headerTitle}>{t("fonts.title")}</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -41,13 +43,13 @@ export default function FontsScreen() {
             {preview}
           </Text>
           <Text style={[styles.previewBody, { fontFamily: previewBody, fontSize: Math.max(12, fontSize - 2) }]}>
-            AaBbCc 123 — le corps du texte suit cette police.
+            {t("fonts.previewBody")}
           </Text>
-          <Text style={styles.previewHint}>La police s'applique à toute l'application.</Text>
+          <Text style={styles.previewHint}>{t("fonts.applies")}</Text>
         </View>
 
         {/* Font size */}
-        <Text style={styles.sectionLabel}>Taille du texte</Text>
+        <Text style={styles.sectionLabel}>{t("fonts.sizeLabel")}</Text>
         <View style={[styles.sizeRow, shadows.soft]}>
           {SIZES.map((s) => {
             const active = fontSize === s;
@@ -64,7 +66,7 @@ export default function FontsScreen() {
         </View>
 
         {/* All 16 fonts */}
-        <Text style={styles.sectionLabel}>Police</Text>
+        <Text style={styles.sectionLabel}>{t("fonts.fontLabel")}</Text>
         <View style={[styles.card, shadows.card]}>
           {FONT_OPTIONS.map((f) => {
             const active = font === f.id;

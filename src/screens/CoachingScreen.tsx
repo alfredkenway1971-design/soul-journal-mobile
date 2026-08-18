@@ -8,7 +8,7 @@ import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
-import { useT } from "@/store/settingsStore";
+import { useT, useSettingsStore, localeFor } from "@/store/settingsStore";
 
 interface Insight {
   id: string;
@@ -18,7 +18,7 @@ interface Insight {
 
 const fmtDate = (iso: string) => {
   try {
-    return new Date(iso).toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" });
+    return new Date(iso).toLocaleDateString(localeFor(useSettingsStore.getState().language), { day: "numeric", month: "long", year: "numeric" });
   } catch {
     return iso;
   }
@@ -66,7 +66,7 @@ export default function CoachingScreen() {
           <View style={[styles.emptyCard, shadows.soft]}>
             <Text style={styles.emptyEmoji}>🌱</Text>
             <Text style={styles.emptyText}>
-              Écrivez régulièrement — l'IA génère des aperçus et réflexions sur vos entrées.
+              {t("coaching.empty")}
             </Text>
           </View>
         ) : (

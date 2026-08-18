@@ -119,7 +119,7 @@ export default function VoiceScreen() {
       // (content:// URIs from the picker are not playable by expo-audio).
       const f = new File(recordedUri);
       if (!f.exists) {
-        Alert.alert("Erreur", "Le fichier audio n'est pas accessible. Réimportez-le.");
+        Alert.alert("Erreur", t("voice.fileInaccessible"));
         return;
       }
       const player = createAudioPlayer({ uri: recordedUri });
@@ -138,7 +138,7 @@ export default function VoiceScreen() {
     } catch (e) {
       console.warn("play error", e);
       setPlaying(false);
-      Alert.alert("Erreur", "Impossible de lire l'échantillon. Réessayez avec un autre fichier.");
+      Alert.alert("Erreur", t("voice.playFailed"));
     }
   };
 
@@ -219,12 +219,12 @@ export default function VoiceScreen() {
       const mime = asset.mimeType || "audio/mpeg";
       // Fish accepts mp3/wav/m4a/webm — reject unsupported types early
       if (!/^(audio|application\/octet-stream)/i.test(mime) && !/\.(mp3|wav|m4a|webm|ogg|aac|flac)$/i.test(name)) {
-        Alert.alert("Format non supporté", "Choisissez un fichier audio (mp3, wav, m4a…).");
+        Alert.alert(t("voice.unsupportedFormat"), t("voice.unsupportedMsg"));
         return;
       }
       // Vercel serverless body limit ~4.5MB — keep uploads under it (base64 inflates ~33%)
       if (asset.size && asset.size > 3.2 * 1024 * 1024) {
-        Alert.alert("Fichier trop volumineux", "Utilisez un audio de moins de 3 Mo (ou raccourcissez l'enregistrement).");
+        Alert.alert(t("voice.tooLarge"), "Utilisez un audio de moins de 3 Mo (ou raccourcissez l'enregistrement).");
         return;
       }
       // Normalize to a readable file:// URI — DocumentPicker can return a
@@ -248,14 +248,14 @@ export default function VoiceScreen() {
       setSampleDuration(dur);
       if (dur !== null && dur > 0 && dur < 10) {
         Alert.alert(
-          "Échantillon trop court",
-          "Fish Audio exige au moins 10 secondes d'audio pour cloner une voix. Choisissez un enregistrement plus long."
+          t("voice.sampleTooShort"),
+          t("voice.sampleTooShortMsg")
         );
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
       console.warn("pick error", e);
-      Alert.alert("Erreur", "Impossible de lire le fichier audio.");
+      Alert.alert("Erreur", t("voice.pickFailed"));
     }
   };
 
@@ -263,11 +263,11 @@ export default function VoiceScreen() {
     if (!recordedUri) return;
     // Live recordings must be >= 10s (timer); uploaded files use measured duration
     if (!uploadedMeta && seconds < 10) {
-      Alert.alert("Voice clone", "L'échantillon doit durer au moins 10 secondes.");
+      Alert.alert(t("voice.sampleTooShort"), t("voice.sampleTooShortMsg"));
       return;
     }
     if (uploadedMeta && sampleDuration !== null && sampleDuration > 0 && sampleDuration < 10) {
-      Alert.alert("Voice clone", "L'échantillon doit durer au moins 10 secondes.");
+      Alert.alert(t("voice.sampleTooShort"), t("voice.sampleTooShortMsg"));
       return;
     }
     if (!user) return;
@@ -325,8 +325,8 @@ export default function VoiceScreen() {
       setTargetLang(null);
       await loadClones();
       Alert.alert(
-        "✨ Voix créée !",
-        `Votre voix ${createdName} est prête. Elle sera utilisée automatiquement pour la lecture des entrées en ${createdName}.`
+        t("voice.cloneSuccess"),
+        `${t("voice.cloneSuccessMsg")}`
       );
     } catch (e: any) {
       console.warn("clone error", e?.message || e);
@@ -335,7 +335,7 @@ export default function VoiceScreen() {
       Alert.alert(
         "Erreur",
         msg.startsWith("clone") || !msg
-          ? "Impossible de créer le clone vocal. Réessayez."
+          ? t("voice.cloneFailed")
           : msg
       );
     } finally {
@@ -356,7 +356,7 @@ export default function VoiceScreen() {
     await loadClones();
   };
 
-  const langName = (code: string) => LANGUAGES.find((l) => l.code === code)?.native ?? (code === "default" ? "Défaut" : code);
+  const langName = (code: string) => LANGUAGES.find((l) => l.code === code)?.native ?? (code === "default" ? t("voice.default") : code);
   const langFlag = (code: string) => LANGUAGES.find((l) => l.code === code)?.flag ?? "🌍";
   const clonedLangs = clones.map((c) => c.lang);
 
@@ -373,8 +373,8 @@ export default function VoiceScreen() {
 
         {!isPremium ? (
           <UpgradePrompt
-            title="La voix clonée est une fonction Premium"
-            description="Enregistrez un échantillon de 10 secondes et l'IA reproduit votre voix pour lire vos entrées."
+            title={t("voice.premiumTitle")}
+            description={t("voice.premiumDesc")}
           />
         ) : loading ? (
           <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
@@ -383,7 +383,7 @@ export default function VoiceScreen() {
             {/* Clone list (per language, from the DB) */}
             {clones.length > 0 && (
               <View style={styles.listCard}>
-                <Text style={styles.listTitle}>Mes voix clonées</Text>
+                <Text style={styles.listTitle}>{t("voice.clonedVoices")}</Text>
                 {clones.map((c) => (
                   <View key={c.lang} style={[styles.cloneRow, shadows.soft]}>
                     <Text style={styles.cloneFlag}>{langFlag(c.lang)}</Text>
@@ -392,7 +392,7 @@ export default function VoiceScreen() {
                         <Text style={styles.cloneName}>{langName(c.lang)}</Text>
                         {c.lang === language && (
                           <View style={styles.defaultBadge}>
-                            <Text style={styles.defaultBadgeText}>Défaut</Text>
+                            <Text style={styles.defaultBadgeText}>{t("voice.default")}</Text>
                           </View>
                         )}
                       </View>
@@ -402,7 +402,7 @@ export default function VoiceScreen() {
                       style={styles.reRecordBtn}
                       onPress={() => { setTargetLang(c.lang); setRecordedUri(null); }}
                     >
-                      <Text style={styles.reRecordText}>Ré-enregistrer</Text>
+                      <Text style={styles.reRecordText}>{t("voice.reRecord")}</Text>
                     </Pressable>
                     <Pressable onPress={() => removeClone(c.lang)} hitSlop={8} style={{ marginLeft: 10 }}>
                       <Text style={styles.cloneDelete}>🗑️</Text>
@@ -413,7 +413,7 @@ export default function VoiceScreen() {
             )}
 
             {/* Language target chips (add a voice in another language) */}
-            <Text style={styles.sectionLabel}>Ajouter une voix dans une langue</Text>
+            <Text style={styles.sectionLabel}>{t("voice.addLangVoice")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.langRow}>
               {LANGUAGES.map((l) => {
                 const has = clonedLangs.includes(l.code);
@@ -440,7 +440,7 @@ export default function VoiceScreen() {
                         <Text style={styles.recordIcon}>{recordedUri && !uploadedMeta ? "🔁" : "🎤"}</Text>
                       </View>
                       <Text style={styles.recordLabel}>
-                        {recordedUri && !uploadedMeta ? "Ré-enregistrer" : t("record.pressToRecord")}
+                        {recordedUri && !uploadedMeta ? t("voice.reRecord") : t("record.pressToRecord")}
                       </Text>
                     </Pressable>
                     <Pressable style={[styles.recordBtn, { flex: 1 }]} onPress={pickAudio}>
@@ -448,7 +448,7 @@ export default function VoiceScreen() {
                         <Text style={styles.recordIcon}>{uploadedMeta ? "🔁" : "📁"}</Text>
                       </View>
                       <Text style={styles.recordLabel}>
-                        {uploadedMeta ? "Choisir un autre" : "Importer un audio"}
+                        {uploadedMeta ? t("voice.chooseAnother") : t("voice.importAudio")}
                       </Text>
                     </Pressable>
                   </View>
@@ -469,7 +469,7 @@ export default function VoiceScreen() {
 
               {recordedUri && !isRecording && (
                 <Pressable style={[styles.playBtn, shadows.soft]} onPress={togglePlay}>
-                  <Text style={styles.playBtnText}>{playing ? "⏸ Arrêter" : "▶️ Écouter l'échantillon"}</Text>
+                  <Text style={styles.playBtnText}>{playing ? "⏸ " + t("voice.reRecord") : "▶️ " + t("voice.listenSample")}</Text>
                 </Pressable>
               )}
             </View>
@@ -481,7 +481,7 @@ export default function VoiceScreen() {
                   <ActivityIndicator color={colors.white} />
                 ) : (
                   <Text style={styles.createBtnText}>
-                    ✨ Créer ma voix clonée{targetLang ? ` (${langName(targetLang)})` : ""}
+                    ✨ {t("voice.createClone")}{targetLang ? ` (${langName(targetLang)})` : ""}
                   </Text>
                 )}
               </Pressable>
@@ -489,7 +489,7 @@ export default function VoiceScreen() {
 
             {creating && (
               <Text style={styles.creatingHint}>
-                Quelques secondes… Fish Audio entraîne le modèle (gratuit).
+                {t("voice.creatingHint")}
               </Text>
             )}
           </>

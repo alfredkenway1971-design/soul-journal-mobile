@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { colors, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
-import { useT } from "@/store/settingsStore";
+import { useT, useSettingsStore, localeFor } from "@/store/settingsStore";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -34,9 +34,10 @@ interface Props {
 const fmtDate = (iso: string) => {
   try {
     const d = new Date(iso);
-    const month = d.toLocaleDateString("en-US", { month: "short" });
+    const locale = localeFor(useSettingsStore.getState().language);
+    const month = d.toLocaleDateString(locale, { month: "short" });
     const day = d.getDate();
-    const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
+    const weekday = d.toLocaleDateString(locale, { weekday: "long" });
     return `${month} ${day}, ${weekday}`;
   } catch {
     return iso;

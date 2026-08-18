@@ -4,9 +4,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { colors, radius, fonts } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { usePinStore } from "@/store/pinStore";
+import { useT } from "@/store/settingsStore";
 
 /** Full-screen lock shown at app open when a PIN is set. */
 export default function PinLockScreen() {
+  const t = useT();
   const { verifyPin, unlock } = usePinStore();
   const appFonts = useAppFonts();
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
@@ -19,7 +21,7 @@ export default function PinLockScreen() {
     if (next.length >= 4 && verifyPin(next)) {
       unlock();
     } else if (next.length >= 4) {
-      Alert.alert("Code incorrect", "Réessayez.");
+      Alert.alert(t("pin.wrongCode"), t("pin.tryAgain"));
       setEntry("");
     }
   };
@@ -31,7 +33,7 @@ export default function PinLockScreen() {
       <View style={styles.center}>
         <Text style={styles.lockEmoji}>🔐</Text>
         <Text style={styles.title}>Soul Journal</Text>
-        <Text style={styles.subtitle}>Entrez votre code PIN</Text>
+        <Text style={styles.subtitle}>{t("pin.title")}</Text>
 
         <View style={styles.dots}>
           {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (

@@ -132,7 +132,7 @@ export default function ProfileScreen() {
         <Text style={styles.title}>👤 {t("nav.profile")}</Text>
 
         {/* ── Account ── */}
-        <Section title="Compte">
+        <Section title={t("profile.sectionAccount")}>
           <Pressable
             style={({ pressed }) => [styles.profileHeader, pressed && { backgroundColor: "#f4f8fd" }]}
             onPress={() => go("ProfileSettings")}
@@ -174,10 +174,10 @@ export default function ProfileScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.premiumTitle, { color: isPremium ? "#92400e" : "#ffffff" }]}>
-                    {isPremium ? "Soul Journal Premium" : "Passez à Premium"}
+                    {isPremium ? "Soul Journal Premium" : t("profile.goUpgrade")}
                   </Text>
                   <Text style={[styles.premiumDesc, { color: isPremium ? "#a16207" : "rgba(255,255,255,0.92)" }]}>
-                    {isPremium ? "Merci de soutenir l'application ✨" : "Voix clonée, Soul Mirror, livre PDF & plus"}
+                    {isPremium ? t("profile.premiumThanks") : t("profile.premiumDesc")}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={isPremium ? "#92400e" : "#ffffff"} />
@@ -187,17 +187,17 @@ export default function ProfileScreen() {
         </Section>
 
         {/* ── Appearance ── */}
-        <Section title="Apparence">
+        <Section title={t("profile.sectionAppearance")}>
           {rows([
-            { icon: "color-palette-outline", label: "Thèmes", onPress: () => go("Themes") },
-            { icon: "text-outline", label: "Police d'écriture", onPress: () => go("Fonts") },
+            { icon: "color-palette-outline", label: t("profile.themes"), onPress: () => go("Themes") },
+            { icon: "text-outline", label: t("profile.fonts"), onPress: () => go("Fonts") },
           ])}
         </Section>
 
         {/* ── Voice & Language ── */}
-        <Section title="Voix & Langue">
+        <Section title={t("profile.sectionVoiceLang")}>
           {rows([
-            { icon: "mic-outline", label: "Ma voix", onPress: () => go("Voice"), badge: "Premium" },
+            { icon: "mic-outline", label: t("profile.myVoice"), onPress: () => go("Voice"), badge: "Premium" },
           ])}
           <Pressable
             style={({ pressed }) => [styles.row, styles.rowBorder, pressed && { backgroundColor: "#f4f8fd" }]}
@@ -213,48 +213,48 @@ export default function ProfileScreen() {
         </Section>
 
         {/* ── Content Tools ── */}
-        <Section title="Outils de contenu">
+        <Section title={t("profile.sectionContentTools")}>
           {rows([
-            { icon: "book-outline", label: "Livre (PDF)", onPress: () => go("BookBuilder"), badge: "Premium" },
-            { icon: "download-outline", label: "Exporter (PDF)", onPress: () => go("Export") },
-            { icon: "calendar-outline", label: "Calendrier", onPress: () => go("Calendar") },
-            { icon: "bar-chart-outline", label: "Aperçus", onPress: () => go("Insights") },
-            { icon: "school-outline", label: "Coaching IA", onPress: () => go("Coaching") },
+            { icon: "book-outline", label: t("profile.bookPdf"), onPress: () => go("BookBuilder"), badge: "Premium" },
+            { icon: "download-outline", label: t("profile.exportPdf"), onPress: () => go("Export") },
+            { icon: "calendar-outline", label: t("profile.calendar"), onPress: () => go("Calendar") },
+            { icon: "bar-chart-outline", label: t("profile.insights"), onPress: () => go("Insights") },
+            { icon: "school-outline", label: t("profile.coaching"), onPress: () => go("Coaching") },
           ])}
         </Section>
 
         {/* ── Wellbeing ── */}
-        <Section title="Bien-être">
+        <Section title={t("profile.sectionWellbeing")}>
           {rows([
             { icon: "heart-outline", label: "Gratitude", onPress: () => go("Gratitude") },
             { icon: "people-outline", label: "Relations", onPress: () => go("Relations") },
             { icon: "flag-outline", label: "Objectifs", onPress: () => go("Goals") },
-            { icon: "sparkles-outline", label: "Soul Mirror", onPress: () => go("SoulMirror"), badge: "Premium" },
+            { icon: "sparkles-outline", label: t("profile.soulMirror"), onPress: () => go("SoulMirror"), badge: "Premium" },
           ])}
         </Section>
 
         {/* ── Notifications ── */}
-        <Section title="Notifications">
+        <Section title={t("profile.sectionNotifications")}>
           {rows([
             { icon: "notifications-outline", label: "Rappels", onPress: () => go("Reminders") },
           ])}
         </Section>
 
         {/* ── Security ── */}
-        <Section title="Sécurité">
+        <Section title={t("profile.sectionSecurity")}>
           {rows([
-            { icon: "lock-closed-outline", label: "Code PIN", onPress: () => go("PinSettings") },
-            { icon: "shield-checkmark-outline", label: "Sécurité", onPress: () => go("Security") },
+            { icon: "lock-closed-outline", label: t("profile.pin"), onPress: () => go("PinSettings") },
+            { icon: "shield-checkmark-outline", label: t("profile.security"), onPress: () => go("Security") },
           ])}
         </Section>
 
         {/* ── Legal & Info ── */}
-        <Section title="Légal & Infos">
+        <Section title={t("profile.sectionLegal")}>
           {rows([
             { icon: "document-text-outline", label: t("profile.privacy"), onPress: () => go("Privacy") },
             { icon: "information-circle-outline", label: t("profile.about"), onPress: () => Alert.alert("Soul Journal", t("profile.version")) },
             ...(isAdmin
-              ? [{ icon: "shield-outline" as IconName, label: "Admin", onPress: () => go("Admin") }]
+              ? [{ icon: "shield-outline" as IconName, label: t("admin.title"), onPress: () => go("Admin") }]
               : []),
           ])}
         </Section>

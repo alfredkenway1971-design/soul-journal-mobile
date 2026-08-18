@@ -50,3 +50,17 @@ export function translate(key: string, lang: AppLanguage = "fr"): string {
   if (enVal != null) return enVal;
   return key;
 }
+
+/** BCP-47 locale for date/number formatting in the active language. */
+export function localeFor(lang: AppLanguage): string {
+  switch (lang) {
+    case "en": return "en-US";
+    case "fr": return "fr-CA";
+    case "es": return "es-ES";
+    case "ar": return "ar";
+    case "zh": return "zh-CN";
+    case "ja": return "ja-JP";
+    case "sw": return "sw-KE";
+    case "de": return "de-DE";
+  }
+}

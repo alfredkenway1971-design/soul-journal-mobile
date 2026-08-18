@@ -9,7 +9,7 @@ import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
-import { useT } from "@/store/settingsStore";
+import { useT, useSettingsStore, localeFor } from "@/store/settingsStore";
 
 const MOOD_EMOJI: Record<string, string> = {
   happy: "😊",
@@ -24,7 +24,7 @@ const escapeHtml = (s: string) =>
 
 const fmtDate = (iso: string) => {
   try {
-    return new Date(iso).toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" });
+    return new Date(iso).toLocaleDateString(localeFor(useSettingsStore.getState().language), { day: "numeric", month: "long", year: "numeric" });
   } catch {
     return iso;
   }
@@ -67,12 +67,12 @@ export default function ExportScreen() {
 </style>
 </head>
 <body>
-  <h1>📖 Mon journal — Soul Journal</h1>
-  <div class="sub">${count} entrée${count > 1 ? "s" : ""} · Exporté le ${new Date().toLocaleDateString("fr-CA")}</div>
-  ${count === 0 ? '<p class="empty">Aucune entrée.</p>' : (entries ?? []).map((e) => `
+  <h1>${t("export.h1")}</h1>
+  <div class="sub">${count} ${count > 1 ? t("export.entryMany") : t("export.entryOne")} · ${t("export.exportedOn")} ${new Date().toLocaleDateString(localeFor(useSettingsStore.getState().language))}</div>
+  ${count === 0 ? `<p class="empty">${t("export.empty")}</p>` : (entries ?? []).map((e) => `
   <div class="entry">
     <div class="date">${fmtDate(e.created_at)}</div>
-    <div class="title">${escapeHtml(e.title || "Sans titre")}</div>
+    <div class="title">${escapeHtml(e.title || t("entry.untitled"))}</div>
     <div class="body">${escapeHtml((e.enhanced_text || e.original_transcription || ""))}</div>
     <div class="mood">${MOOD_EMOJI[e.mood ?? ""] ?? ""}</div>
   </div>`).join("")}
@@ -83,13 +83,13 @@ export default function ExportScreen() {
       if (!uri) throw new Error("no pdf");
 
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: "application/pdf", dialogTitle: "Mon journal" });
+        await Sharing.shareAsync(uri, { mimeType: "application/pdf", dialogTitle: t("export.dialogTitle") });
       } else {
-        Alert.alert("PDF créé", `Fichier : ${uri}`);
+        Alert.alert(t("export.created"), t("export.createdBody").replace("{uri}", uri));
       }
     } catch (e) {
       console.warn("export error", e);
-      Alert.alert("Erreur", "Impossible de créer le PDF.");
+      Alert.alert(t("common.error"), t("export.failed"));
     } finally {
       setExporting(false);
     }
@@ -102,27 +102,27 @@ export default function ExportScreen() {
           <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.iconBtnText}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>📖 Exporter</Text>
+          <Text style={styles.headerTitle}>{t("export.pageTitle")}</Text>
           <View style={{ width: 40 }} />
         </View>
 
         <View style={[styles.card, shadows.card]}>
           <Text style={styles.cardEmoji}>📖</Text>
-          <Text style={styles.cardTitle}>Mon journal en PDF</Text>
+          <Text style={styles.cardTitle}>{t("export.title")}</Text>
           <Text style={styles.cardDesc}>
-            Exportez toutes vos entrées dans un beau document PDF, prêt à partager ou à conserver.
+            {t("export.desc")}
           </Text>
           <Pressable style={[styles.exportBtn, shadows.soft, exporting && { opacity: 0.6 }]} onPress={exportPdf} disabled={exporting}>
             {exporting ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.exportBtnText}>📄 Créer le PDF</Text>
+              <Text style={styles.exportBtnText}>{t("export.createPdf")}</Text>
             )}
           </Pressable>
         </View>
 
         <Text style={styles.footnote}>
-          Jusqu'à 200 entrées récentes. Le PDF s'ouvre dans la feuille de partage.
+          {t("export.limit")}
         </Text>
       </ScrollView>
     </LinearGradient>

@@ -11,7 +11,7 @@ import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
-import { useT, useSettingsStore } from "@/store/settingsStore";
+import { useT, useSettingsStore, localeFor } from "@/store/settingsStore";
 
 const ENHANCE_URL = "https://soul-journal-seven.vercel.app/api/enhance-text";
 
@@ -45,12 +45,12 @@ type EntryDetailRoute = RouteProp<RootStackParamList, "EntryDetail">;
 const fmtDate = (iso: string) => {
   try {
     const d = new Date(iso);
-    return `${d.toLocaleDateString("fr-CA", {
+    return `${d.toLocaleDateString(localeFor(useSettingsStore.getState().language), {
       weekday: "long",
       day: "numeric",
       month: "long",
       year: "numeric",
-    })} · ${d.toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}`;
+    })} · ${d.toLocaleTimeString(localeFor(useSettingsStore.getState().language), { hour: "2-digit", minute: "2-digit" })}`;
   } catch {
     return iso;
   }
@@ -385,10 +385,10 @@ export default function EntryDetailScreen() {
           {/* Body — editable + AI enhance (matches web "Your Story" card) */}
           <View style={[styles.bodyCard, shadows.card]}>
             <View style={styles.bodyHeader}>
-              <Text style={styles.bodyHeaderTitle}>Votre histoire</Text>
+              <Text style={styles.bodyHeaderTitle}>{t("entry.yourStory")}</Text>
               {!editing && (
                 <Pressable onPress={startEdit} hitSlop={8}>
-                  <Text style={styles.editBtn}>✏️ Modifier</Text>
+                  <Text style={styles.editBtn}>✏️ {t("entry.editBtn")}</Text>
                 </Pressable>
               )}
             </View>
@@ -468,7 +468,7 @@ export default function EntryDetailScreen() {
             return (
               <View style={[styles.reflectionCard, shadows.card]}>
                 <View style={styles.reflectionHeader}>
-                  <Text style={styles.reflectionTitle}>✨ Réflexion du miroir</Text>
+                  <Text style={styles.reflectionTitle}>{t("entry.mirrorReflection")}</Text>
                   <View style={styles.reflectionBadge}>
                     <Text style={styles.reflectionBadgeText}>{modeLabel}</Text>
                   </View>

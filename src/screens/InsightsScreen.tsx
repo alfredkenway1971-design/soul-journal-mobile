@@ -80,14 +80,14 @@ export default function InsightsScreen() {
           <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.iconBtnText}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>📊 Aperçus</Text>
+          <Text style={styles.headerTitle}>{t("insights.title")}</Text>
           <View style={{ width: 40 }} />
         </View>
 
         {/* Weekly mood chart */}
         <View style={[styles.card, shadows.card]}>
-          <Text style={styles.cardTitle}>Semaine en cours</Text>
-          <Text style={styles.cardSub}>{total} entrée{total > 1 ? "s" : ""} ces 7 derniers jours</Text>
+          <Text style={styles.cardTitle}>{t("insights.thisWeek")}</Text>
+          <Text style={styles.cardSub}>{total} {total > 1 ? t("insights.entries7").replace("{count}", String(total)) : t("insights.entry7").replace("{count}", String(total))}</Text>
           <View style={styles.chart}>
             {weekly.map((w, i) => (
               <View key={i} style={styles.chartCol}>
@@ -105,9 +105,9 @@ export default function InsightsScreen() {
 
         {/* Mood distribution */}
         <View style={[styles.card, shadows.card]}>
-          <Text style={styles.cardTitle}>Répartition des humeurs</Text>
+          <Text style={styles.cardTitle}>{t("insights.moodDist")}</Text>
           {distribution.length === 0 ? (
-            <Text style={styles.empty}>Aucune donnée cette semaine.</Text>
+            <Text style={styles.empty}>{t("insights.noData")}</Text>
           ) : (
             distribution.map((d, i) => (
               <View key={i} style={styles.distRow}>
@@ -124,9 +124,9 @@ export default function InsightsScreen() {
 
         {/* AI insight teaser */}
         <View style={[styles.card, shadows.card]}>
-          <Text style={styles.cardTitle}>✨ Aperçu IA</Text>
+          <Text style={styles.cardTitle}>{t("insights.ai")}</Text>
           <Text style={styles.cardBody}>
-            Écrivez quelques entrées pour recevoir des aperçus personnalisés sur vos semaines.
+            {t("insights.writeFirst")}
           </Text>
         </View>
       </ScrollView>

@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { useMemo } from "react";
 import { colors, radius, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
+import { useT } from "@/store/settingsStore";
 
 interface Props {
   title: string;
@@ -11,6 +12,7 @@ interface Props {
 /** Premium locked card — shown for non-premium users on premium features. */
 export default function UpgradePrompt({ title, description }: Props) {
   const appFonts = useAppFonts();
+  const t = useT();
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   return (
     <View style={[styles.card, shadows.card]}>
@@ -23,7 +25,7 @@ export default function UpgradePrompt({ title, description }: Props) {
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.description}>{description}</Text>
       <View style={styles.cta}>
-        <Text style={styles.ctaText}>Débloquer avec Premium →</Text>
+        <Text style={styles.ctaText}>{t("upgrade.cta")}</Text>
       </View>
     </View>
   );

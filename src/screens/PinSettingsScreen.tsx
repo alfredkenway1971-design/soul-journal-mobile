@@ -7,9 +7,11 @@ import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { usePinStore } from "@/store/pinStore";
+import { useT } from "@/store/settingsStore";
 
 export default function PinSettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const t = useT();
   const appFonts = useAppFonts();
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const { hasPin, setPin, removePin, verifyPin } = usePinStore();
@@ -19,28 +21,28 @@ export default function PinSettingsScreen() {
 
   const submitCreate = async () => {
     if (pin.length < 4) {
-      Alert.alert("PIN", "Le code doit avoir au moins 4 chiffres.");
+      Alert.alert(t("pin.protect"), t("pin.minLength"));
       return;
     }
     if (pin !== confirm) {
-      Alert.alert("PIN", "Les codes ne correspondent pas.");
+      Alert.alert(t("pin.protect"), t("pin.mismatch"));
       return;
     }
     await setPin(pin);
     setPinInput("");
     setConfirm("");
-    Alert.alert("✓", "Code PIN activé.");
+    Alert.alert(t("common.ok"), t("pin.enabled"));
     navigation.goBack();
   };
 
   const submitRemove = async () => {
     if (!verifyPin(pin)) {
-      Alert.alert("PIN", "Code incorrect.");
+      Alert.alert(t("pin.protect"), t("pin.wrongCode"));
       return;
     }
     await removePin();
     setPinInput("");
-    Alert.alert("✓", "Code PIN désactivé.");
+    Alert.alert(t("common.ok"), t("pin.disabled"));
     navigation.goBack();
   };
 
@@ -51,27 +53,27 @@ export default function PinSettingsScreen() {
           <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.iconBtnText}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>🔐 Code PIN</Text>
+          <Text style={styles.headerTitle}>🔐 {t("security.pinStatus")}</Text>
           <View style={{ width: 40 }} />
         </View>
 
         <View style={[styles.card, shadows.card]}>
           <Text style={styles.title}>
-            {hasPin ? "Protection active" : "Protégez votre journal"}
+            {hasPin ? t("pin.activeTitle") : t("pin.protect")}
           </Text>
           <Text style={styles.desc}>
             {hasPin
-              ? "Un code est demandé à l'ouverture de l'application."
-              : "Ajoutez un code PIN pour verrouiller vos entrées."}
+              ? t("pin.unlockNote")
+              : t("pin.desc")}
           </Text>
 
           {hasPin && (
             <View style={styles.modeRow}>
               <Pressable style={[styles.modeBtn, mode === "create" && styles.modeBtnActive]} onPress={() => setMode("create")}>
-                <Text style={[styles.modeText, mode === "create" && { color: colors.white }]}>Changer</Text>
+                <Text style={[styles.modeText, mode === "create" && { color: colors.white }]}>{t("pin.change")}</Text>
               </Pressable>
               <Pressable style={[styles.modeBtn, mode === "remove" && styles.modeBtnActive]} onPress={() => setMode("remove")}>
-                <Text style={[styles.modeText, mode === "remove" && { color: colors.white }]}>Désactiver</Text>
+                <Text style={[styles.modeText, mode === "remove" && { color: colors.white }]}>{t("pin.disable")}</Text>
               </Pressable>
             </View>
           )}
@@ -89,7 +91,7 @@ export default function PinSettingsScreen() {
           {mode === "create" && (
             <TextInput
               style={[styles.input, shadows.soft]}
-              placeholder="Confirmer le code"
+              placeholder={t("security.confirmPw")}
               placeholderTextColor={colors.textFaint}
               keyboardType="number-pad"
               secureTextEntry
@@ -103,7 +105,7 @@ export default function PinSettingsScreen() {
             style={[styles.btn, shadows.soft]}
             onPress={mode === "remove" ? submitRemove : submitCreate}
           >
-            <Text style={styles.btnText}>{mode === "remove" ? "Désactiver le PIN" : "Activer le PIN"}</Text>
+            <Text style={styles.btnText}>{mode === "remove" ? t("pin.disableTitle") : "Activer le PIN"}</Text>
           </Pressable>
         </View>
       </ScrollView>

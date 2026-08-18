@@ -33,7 +33,7 @@ export default function RemindersScreen() {
     if (value) {
       const granted = await requestNotificationPermission();
       if (!granted) {
-        Alert.alert("Notifications", "Autorisez les notifications dans les réglages pour activer le rappel.");
+        Alert.alert(t("reminders.title"), t("reminders.allowNote"));
         return;
       }
     }
@@ -69,8 +69,8 @@ export default function RemindersScreen() {
         <View style={[styles.card, shadows.card]}>
           <View style={styles.toggleRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.toggleTitle}>Rappel quotidien</Text>
-              <Text style={styles.toggleDesc}>Un rappel pour écrire dans votre journal.</Text>
+              <Text style={styles.toggleTitle}>{t("reminders.dailyTitle")}</Text>
+              <Text style={styles.toggleDesc}>{t("reminders.desc")}</Text>
             </View>
             <Switch
               value={enabled}
@@ -83,10 +83,10 @@ export default function RemindersScreen() {
 
         {enabled && (
           <View style={[styles.card, shadows.card]}>
-            <Text style={styles.sectionTitle}>Heure du rappel</Text>
+            <Text style={styles.sectionTitle}>{t("reminders.timeLabel")}</Text>
             <Text style={styles.timeLabel}>{timeLabel}</Text>
 
-            <Text style={styles.pickerLabel}>Heure</Text>
+            <Text style={styles.pickerLabel}>{t("reminders.hour")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
               {HOURS.map((h) => (
                 <Pressable
@@ -101,7 +101,7 @@ export default function RemindersScreen() {
               ))}
             </ScrollView>
 
-            <Text style={styles.pickerLabel}>Minutes</Text>
+            <Text style={styles.pickerLabel}>{t("reminders.minute")}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
               {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
                 <Pressable
@@ -119,7 +119,7 @@ export default function RemindersScreen() {
         )}
 
         <Text style={styles.footnote}>
-          Les notifications push à distance (FCM) arrivent avec la version Play. Les rappels locaux fonctionnent déjà.
+          {t("reminders.fcmNote")}
         </Text>
       </ScrollView>
     </LinearGradient>

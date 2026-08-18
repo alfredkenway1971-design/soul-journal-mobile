@@ -11,13 +11,14 @@ import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
+import { useT, useSettingsStore, localeFor } from "@/store/settingsStore";
 import UpgradePrompt from "@/components/UpgradePrompt";
 
 const COVERS = [
-  { id: "nebula", label: "Nébuleuse", from: "#1e3a5f", to: "#7c3aed" },
-  { id: "minimalist", label: "Minimaliste", from: "#f8fafc", to: "#cbd5e1" },
-  { id: "botanical", label: "Botanique", from: "#064e3b", to: "#10b981" },
-  { id: "sunrise", label: "Aurore", from: "#7c2d12", to: "#f59e0b" },
+  { id: "nebula", labelKey: "book.cover", from: "#1e3a5f", to: "#7c3aed" },
+  { id: "minimalist", labelKey: "book.coverMinimalist", from: "#f8fafc", to: "#cbd5e1" },
+  { id: "botanical", labelKey: "book.coverBotanical", from: "#064e3b", to: "#10b981" },
+  { id: "sunrise", labelKey: "book.coverSunrise", from: "#7c2d12", to: "#f59e0b" },
 ] as const;
 
 const MOOD_EMOJI: Record<string, string> = { happy: "😊", good: "😇", fine: "😌", sad: "😔", unhappy: "😢" };
@@ -27,6 +28,7 @@ const escapeHtml = (s: string) =>
 
 export default function BookBuilderScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const t = useT();
   const appFonts = useAppFonts();
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
@@ -52,7 +54,7 @@ export default function BookBuilderScreen() {
   const buildBook = async () => {
     if (!user) return;
     setBuilding(true);
-    setProgress("Chargement des entrées…");
+    setProgress(t("book.loading"));
     try {
       const { data: profile } = await supabase
         .from("profiles")
@@ -68,12 +70,12 @@ export default function BookBuilderScreen() {
         .order("created_at", { ascending: true });
 
       if (!entries || entries.length === 0) {
-        Alert.alert("Aucune entrée", "Écrivez d'abord quelques entrées.");
+        Alert.alert(t("book.empty"), t("book.noEntriesBody"));
         setBuilding(false);
         return;
       }
 
-      setProgress("Composition du livre…");
+      setProgress(t("book.composing"));
       const c = COVERS.find((x) => x.id === cover)!;
       const yearRange = entries.length > 0
         ? `${new Date(entries[0].created_at).getFullYear()} — ${new Date(entries[entries.length - 1].created_at).getFullYear()}`
@@ -83,12 +85,12 @@ export default function BookBuilderScreen() {
         .map((e, i) => {
           const text = (e.enhanced_text || e.original_transcription || "").substring(0, 1200);
           const d = new Date(e.created_at);
-          const date = d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" });
+          const date = d.toLocaleDateString(localeFor(useSettingsStore.getState().language), { day: "numeric", month: "long", year: "numeric" });
           return `
             <div class="entry">
               <div class="entry-head">
                 <span class="mood">${MOOD_EMOJI[e.mood ?? ""] ?? "📝"}</span>
-                <span class="title">${escapeHtml(e.title || `Entrée ${i + 1}`)}</span>
+                <span class="title">${escapeHtml(e.title || t("book.entryFallback").replace("{n}", String(i + 1)))}</span>
               </div>
               <div class="date">${date}</div>
               <div class="body">${escapeHtml(text || "")}</div>
@@ -130,27 +132,27 @@ export default function BookBuilderScreen() {
   <div class="cover">
     <div class="brand">Soul Journal</div>
     <h1>${escapeHtml(authorName)}</h1>
-    <div class="author">Mes entrées personnelles</div>
+    <div class="author">${t("book.title")}</div>
     <div class="years">${yearRange}</div>
   </div>
   ${entryCards}
-  <div class="footer">Créé avec Soul Journal</div>
+  <div class="footer">${t("book.footerLine")}</div>
 </body>
 </html>`;
 
-      setProgress("Génération du PDF…");
+      setProgress(t("book.generating"));
       const { uri } = await Print.printToFileAsync({ html });
       const out = `${FileSystem.cacheDirectory}soul-journal-${Date.now()}.pdf`;
       await FileSystem.copyAsync({ from: uri, to: out });
       setBuilding(false);
       try {
-        await Share.share({ url: out, message: "Mon livre Soul Journal 📓" });
+        await Share.share({ url: out, message: t("book.shareMsg") });
       } catch {
-        Alert.alert("PDF prêt", `Livre créé avec ${entries.length} entrées.`);
+        Alert.alert(t("book.ready"), t("book.readyBody").replace("{count}", String(entries.length)));
       }
     } catch (e) {
       console.warn("book error", e);
-      Alert.alert("Erreur", "Impossible de générer le livre.");
+      Alert.alert(t("common.error"), t("book.failed"));
       setBuilding(false);
     }
   };
@@ -162,27 +164,27 @@ export default function BookBuilderScreen() {
           <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.iconBtnText}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>📖 Livre</Text>
+          <Text style={styles.headerTitle}>{t("book.pageTitle")}</Text>
           <View style={{ width: 40 }} />
         </View>
 
         {!isPremium ? (
           <UpgradePrompt
-            title="Le livre PDF est une fonction Premium"
-            description="Transformez vos entrées en un beau livre PDF avec couverture et mise en page soignée."
+            title={t("book.premiumTitle")}
+            description={t("book.premiumDesc")}
           />
         ) : (
           <>
             <View style={[styles.infoCard, shadows.soft]}>
-              <Text style={styles.infoTitle}>📚 Votre livre</Text>
+              <Text style={styles.infoTitle}>{t("book.yourBook")}</Text>
               <Text style={styles.infoText}>
                 {count === 0
-                  ? "Aucune entrée pour l'instant — écrivez pour créer votre livre."
-                  : `${count} entrée${count > 1 ? "s" : ""} seront compilées en un PDF avec couverture.`}
+                  ? t("book.noEntriesHint")
+                  : t("book.countHint").replace("{count}", String(count))}
               </Text>
             </View>
 
-            <Text style={styles.sectionLabel}>Couverture</Text>
+            <Text style={styles.sectionLabel}>{t("book.coverLabel")}</Text>
             <View style={styles.coverRow}>
               {COVERS.map((c) => {
                 const active = cover === c.id;
@@ -195,7 +197,7 @@ export default function BookBuilderScreen() {
                     <LinearGradient colors={[c.from, c.to]} style={styles.coverSwatch}>
                       <Text style={styles.coverLetter}>📓</Text>
                     </LinearGradient>
-                    <Text style={[styles.coverLabel, active && { color: colors.primary }]}>{c.label}</Text>
+                    <Text style={[styles.coverLabel, active && { color: colors.primary }]}>{t(c.labelKey)}</Text>
                   </Pressable>
                 );
               })}
@@ -212,7 +214,7 @@ export default function BookBuilderScreen() {
                 onPress={buildBook}
                 disabled={count === 0}
               >
-                <Text style={styles.buildText}>Créer le PDF ✨</Text>
+                <Text style={styles.buildText}>{t("book.createPdf")}</Text>
               </Pressable>
             )}
           </>

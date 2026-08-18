@@ -48,13 +48,13 @@ export default function PricingScreen() {
           <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.iconBtnText}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>👑 Premium</Text>
+          <Text style={styles.headerTitle}>{t("pricing.title")}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={[styles.activeCard, shadows.card]}>
           <Text style={styles.activeEmoji}>👑</Text>
-          <Text style={styles.activeTitle}>Vous êtes Premium</Text>
-          <Text style={styles.activeDesc}>Toutes les fonctionnalités sont débloquées.</Text>
+          <Text style={styles.activeTitle}>{t("pricing.youArePremium")}</Text>
+          <Text style={styles.activeDesc}>{t("pricing.allUnlocked")}</Text>
         </View>
       </LinearGradient>
     );
@@ -67,15 +67,15 @@ export default function PricingScreen() {
           <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.iconBtnText}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>👑 Premium</Text>
+          <Text style={styles.headerTitle}>{t("pricing.title")}</Text>
           <View style={{ width: 40 }} />
         </View>
 
         <View style={[styles.hero, shadows.card]}>
           <Text style={styles.heroEmoji}>✨</Text>
-          <Text style={styles.heroTitle}>Débloquez tout Soul Journal</Text>
+          <Text style={styles.heroTitle}>{t("pricing.unlockAll")}</Text>
           <Text style={styles.heroDesc}>
-            Voix clonée, Soul Mirror, aperçus IA détaillés et plus encore.
+            {t("pricing.features")}
           </Text>
         </View>
 
@@ -86,10 +86,10 @@ export default function PricingScreen() {
           disabled={busy != null}
         >
           <View style={styles.tierTop}>
-            <Text style={styles.tierName}>Mensuel</Text>
-            <Text style={styles.tierPrice}>{monthlyPrice}<Text style={styles.tierPer}>/mois</Text></Text>
+            <Text style={styles.tierName}>{t("pricing.monthly")}</Text>
+            <Text style={styles.tierPrice}>{monthlyPrice}<Text style={styles.tierPer}>{t("pricing.perMonth")}</Text></Text>
           </View>
-          <Text style={styles.tierDesc}>Toutes les fonctionnalités Premium. Annulable à tout moment.</Text>
+          <Text style={styles.tierDesc}>{t("pricing.cancellable")}</Text>
           {busy === PRODUCT_IDS.monthly && <ActivityIndicator color={colors.white} style={{ marginTop: 12 }} />}
         </Pressable>
 
@@ -100,27 +100,27 @@ export default function PricingScreen() {
           disabled={busy != null}
         >
           <View style={styles.saveBadge}>
-            <Text style={styles.saveBadgeText}>Économisez 20%</Text>
+            <Text style={styles.saveBadgeText}>{t("pricing.save20")}</Text>
           </View>
           <View style={styles.tierTop}>
-            <Text style={[styles.tierName, { color: colors.white }]}>Annuel</Text>
-            <Text style={[styles.tierPrice, { color: colors.white }]}>{yearlyPrice}<Text style={styles.tierPer}>/an</Text></Text>
+            <Text style={[styles.tierName, { color: colors.white }]}>{t("pricing.yearly")}</Text>
+            <Text style={[styles.tierPrice, { color: colors.white }]}>{yearlyPrice}<Text style={styles.tierPer}>{t("pricing.perYear")}</Text></Text>
           </View>
           <Text style={[styles.tierDesc, { color: "rgba(255,255,255,0.85)" }]}>
-            ~${(parseFloat(yearlyPrice.replace("$", "")) / 12).toFixed(2)}/mois — le meilleur choix.
+            {t("pricing.bestChoice").replace("{price}", `$${(parseFloat(yearlyPrice.replace("$", "")) / 12).toFixed(2)}`)}
           </Text>
           {busy === PRODUCT_IDS.yearly && <ActivityIndicator color={colors.white} style={{ marginTop: 12 }} />}
         </Pressable>
 
         <Pressable style={styles.restoreBtn} onPress={async () => {
           const ok = await restorePurchases();
-          Alert.alert("Restaurer", ok ? "Achat restauré." : "Aucun achat à restaurer.");
+          Alert.alert(t("pricing.restore"), ok ? t("pricing.restored") : t("pricing.nothingToRestore"));
         }}>
-          <Text style={styles.restoreText}>Restaurer mes achats</Text>
+          <Text style={styles.restoreText}>{t("pricing.restore")}</Text>
         </Pressable>
 
         <Text style={styles.footnote}>
-          Paiement via Google Play. Annulable dans les paramètres Play. Voir la politique de confidentialité.
+          {t("pricing.playNote")}
         </Text>
       </ScrollView>
     </LinearGradient>

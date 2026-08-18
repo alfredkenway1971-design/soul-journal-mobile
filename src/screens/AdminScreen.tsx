@@ -8,7 +8,7 @@ import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
-import { useT } from "@/store/settingsStore";
+import { useT, useSettingsStore, localeFor } from "@/store/settingsStore";
 
 interface AdminUser {
   id: string;
@@ -28,7 +28,7 @@ type Tab = "users" | "revenue" | "grants";
 const fmtShort = (iso?: string | null) => {
   if (!iso) return null;
   try {
-    return new Date(iso).toLocaleDateString("fr-CA", { day: "numeric", month: "short", year: "numeric" });
+    return new Date(iso).toLocaleDateString(localeFor(useSettingsStore.getState().language), { day: "numeric", month: "short", year: "numeric" });
   } catch { return null; }
 };
 
@@ -120,11 +120,11 @@ export default function AdminScreen() {
 
   const statusBadge = (u: AdminUser) => {
     const s = u.subscription;
-    if (!s) return { label: "Gratuit", bg: colors.primaryLight, fg: colors.primary };
-    if (s.is_manual_grant) return { label: "Accès manuel", bg: "#f3e8ff", fg: "#7c3aed" };
-    if (s.status === "active") return { label: "Actif", bg: "#d1fae5", fg: "#047857" };
-    if (s.status === "cancelled") return { label: "Annulé", bg: "#ffedd5", fg: "#c2410c" };
-    return { label: "Inactif", bg: colors.primaryLight, fg: colors.primary };
+    if (!s) return { label: t("admin.free"), bg: colors.primaryLight, fg: colors.primary };
+    if (s.is_manual_grant) return { label: t("admin.manualAccess"), bg: "#f3e8ff", fg: "#7c3aed" };
+    if (s.status === "active") return { label: t("admin.active"), bg: "#d1fae5", fg: "#047857" };
+    if (s.status === "cancelled") return { label: t("admin.cancelled"), bg: "#ffedd5", fg: "#c2410c" };
+    return { label: t("admin.inactive"), bg: colors.primaryLight, fg: colors.primary };
   };
 
   const initials = (u: AdminUser) =>
@@ -161,9 +161,9 @@ export default function AdminScreen() {
           <>
             {/* Tabs */}
             <View style={[styles.tabs, shadows.soft]}>
-              <TabBtn k="users" label="Utilisateurs" />
-              <TabBtn k="revenue" label="Revenus" />
-              <TabBtn k="grants" label="Accès manuel" />
+              <TabBtn k="users" label={t("admin.users")} />
+              <TabBtn k="revenue" label={t("admin.revenue")} />
+              <TabBtn k="grants" label={t("admin.manualAccess")} />
             </View>
 
             {tab === "users" && (
@@ -195,7 +195,7 @@ export default function AdminScreen() {
                             <Text style={styles.userEmail} numberOfLines={1}>{u.email}</Text>
                             <Text style={styles.userMeta}>
                               Inscrit {joined || "—"}
-                              {lastActive ? ` · Actif ${lastActive}` : ""}
+                              {lastActive ? ` · ${t("admin.active")} ${lastActive}` : ""}
                             </Text>
                           </View>
                           <View style={{ alignItems: "flex-end", gap: 8 }}>
@@ -227,28 +227,28 @@ export default function AdminScreen() {
             {tab === "revenue" && (
               <>
                 <View style={[styles.revenueHero, shadows.card]}>
-                  <Text style={styles.revenueLabel}>Revenus mensuels estimés</Text>
+                  <Text style={styles.revenueLabel}>{t("admin.monthlyRevenue")}</Text>
                   <Text style={styles.revenueTotal}>{fmtUSD(totalMonthly)}</Text>
-                  <Text style={styles.revenueSub}>basé sur les abonnements actifs</Text>
+                  <Text style={styles.revenueSub}>{t("admin.basedOn")}</Text>
                 </View>
                 <View style={styles.revRow}>
                   <View style={[styles.revCard, shadows.soft]}>
                     <Text style={styles.revNum}>{active.length}</Text>
-                    <Text style={styles.revLabel}>Abonnés actifs</Text>
+                    <Text style={styles.revLabel}>{t("admin.activeSubs")}</Text>
                   </View>
                   <View style={[styles.revCard, shadows.soft]}>
                     <Text style={styles.revNum}>{monthly.length}</Text>
-                    <Text style={styles.revLabel}>Mensuels</Text>
+                    <Text style={styles.revLabel}>{t("admin.monthly")}</Text>
                   </View>
                 </View>
                 <View style={styles.revRow}>
                   <View style={[styles.revCard, shadows.soft]}>
                     <Text style={styles.revNum}>{annual.length}</Text>
-                    <Text style={styles.revLabel}>Annuel</Text>
+                    <Text style={styles.revLabel}>{t("admin.yearly")}</Text>
                   </View>
                   <View style={[styles.revCard, shadows.soft]}>
                     <Text style={styles.revNum}>{grants.length}</Text>
-                    <Text style={styles.revLabel}>Accès manuels</Text>
+                    <Text style={styles.revLabel}>{t("admin.manualAccesses")}</Text>
                   </View>
                 </View>
               </>
@@ -257,7 +257,7 @@ export default function AdminScreen() {
             {tab === "grants" && (
               <>
                 <Text style={styles.sectionHint}>
-                  Accorder / révoquer l'accès Premium manuellement (comme le web).
+                  {t("admin.manualDesc")}
                 </Text>
                 {loading ? (
                   <ActivityIndicator color={colors.primary} style={{ marginTop: 30 }} />
@@ -271,7 +271,7 @@ export default function AdminScreen() {
                         </View>
                         <View style={{ flex: 1, marginLeft: 12 }}>
                           <Text style={styles.userEmail} numberOfLines={1}>{u.email}</Text>
-                          {granted && <Text style={styles.grantedLabel}>✓ Premium (manuel)</Text>}
+                          {granted && <Text style={styles.grantedLabel}>{t("admin.premiumManual")}</Text>}
                         </View>
                         <Pressable
                           style={[styles.grantBtn, granted && styles.revokeBtn, busyId === u.id && { opacity: 0.5 }]}
@@ -281,7 +281,7 @@ export default function AdminScreen() {
                           {busyId === u.id ? (
                             <ActivityIndicator color={colors.white} size="small" />
                           ) : (
-                            <Text style={styles.grantText}>{granted ? "Révoquer" : "Accorder"}</Text>
+                            <Text style={styles.grantText}>{granted ? t("admin.revoke") : t("admin.grant")}</Text>
                           )}
                         </Pressable>
                       </View>

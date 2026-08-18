@@ -57,7 +57,7 @@ export default function ProfileSettingsScreen() {
     if (!user) return;
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert("Photos", "Autorisez l'accès aux photos pour choisir un avatar.");
+      Alert.alert(t("common.error"), t("profileSettings.photosDenied"));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -99,10 +99,10 @@ export default function ProfileSettingsScreen() {
       if (updateError) throw updateError;
 
       setAvatarUrl(urlWithCacheBuster);
-      Alert.alert("✓", "Photo de profil mise à jour.");
+      Alert.alert(t("common.ok"), t("profileSettings.avatarUpdated"));
     } catch (e) {
       console.warn("avatar error", e);
-      Alert.alert("Erreur", "Impossible de téléverser la photo.");
+      Alert.alert(t("common.error"), t("profileSettings.avatarFailed"));
     } finally {
       setUploading(false);
     }
@@ -112,7 +112,7 @@ export default function ProfileSettingsScreen() {
     if (!user) return;
     const name = displayName.trim();
     if (!name) {
-      Alert.alert("Nom", "Le nom ne peut pas être vide.");
+      Alert.alert(t("common.error"), t("profileSettings.nameEmpty"));
       return;
     }
     setSaving(true);
@@ -125,17 +125,22 @@ export default function ProfileSettingsScreen() {
         .update(patch)
         .eq("id", user.id);
       if (error) throw error;
-      Alert.alert("✓", "Profil mis à jour.");
+      Alert.alert(t("common.ok"), t("profileSettings.updated"));
       navigation.goBack();
     } catch (e) {
       console.warn("name error", e);
-      Alert.alert("Erreur", "Impossible d'enregistrer.");
+      Alert.alert(t("common.error"), t("profileSettings.saveFailed"));
     } finally {
       setSaving(false);
     }
   };
 
-  const GENDERS = ["Femme", "Homme", "Non-binaire", "Autre"];
+  const GENDERS = [
+    { value: "Femme", key: "profileSettings.genderWoman" },
+    { value: "Homme", key: "profileSettings.genderMan" },
+    { value: "Non-binaire", key: "profileSettings.genderNonBinary" },
+    { value: "Autre", key: "profileSettings.genderOther" },
+  ];
 
   return (
     <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
@@ -144,7 +149,7 @@ export default function ProfileSettingsScreen() {
           <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.iconBtnText}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>👤 Profil</Text>
+          <Text style={styles.headerTitle}>{t("profileSettings.title")}</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -161,52 +166,52 @@ export default function ProfileSettingsScreen() {
             {uploading ? (
               <ActivityIndicator color={colors.white} size="small" />
             ) : (
-              <Text style={styles.avatarBtnText}>📷 Changer la photo</Text>
+              <Text style={styles.avatarBtnText}>{t("profileSettings.changePhoto")}</Text>
             )}
           </Pressable>
         </View>
 
         {/* Display name */}
         <View style={[styles.card, shadows.card]}>
-          <Text style={styles.label}>Nom affiché</Text>
+          <Text style={styles.label}>{t("profileSettings.displayName")}</Text>
           <TextInput
             style={[styles.input, shadows.soft]}
             value={displayName}
             onChangeText={setDisplayName}
-            placeholder="Votre nom"
+            placeholder={t("profileSettings.namePlaceholder")}
             placeholderTextColor={colors.textFaint}
             autoCapitalize="words"
           />
 
           {/* Gender */}
-          <Text style={styles.label}>Genre</Text>
+          <Text style={styles.label}>{t("profileSettings.gender")}</Text>
           <View style={styles.chipRow}>
             {GENDERS.map((g) => {
-              const active = gender === g;
+              const active = gender === g.value;
               return (
                 <Pressable
-                  key={g}
+                  key={g.value}
                   style={[styles.chip, active && styles.chipActive]}
-                  onPress={() => setGender(active ? null : g)}
+                  onPress={() => setGender(active ? null : g.value)}
                 >
-                  <Text style={[styles.chipText, active && { color: colors.white }]}>{g}</Text>
+                  <Text style={[styles.chipText, active && { color: colors.white }]}>{t(g.key)}</Text>
                 </Pressable>
               );
             })}
           </View>
 
           {/* Interests */}
-          <Text style={styles.label}>Intérêts (espaces séparés)</Text>
+          <Text style={styles.label}>{t("profileSettings.interests")}</Text>
           <TextInput
             style={[styles.input, shadows.soft]}
             value={interests.join(" ")}
             onChangeText={(v) => setInterests(v.split(/\s+/).filter(Boolean))}
-            placeholder="lecture, nature, sport…"
+            placeholder={t("profileSettings.interestsPlaceholder")}
             placeholderTextColor={colors.textFaint}
           />
 
           <Pressable style={[styles.saveBtn, shadows.soft, saving && { opacity: 0.6 }]} onPress={saveName} disabled={saving}>
-            <Text style={styles.saveBtnText}>{saving ? "Enregistrement…" : "Enregistrer"}</Text>
+            <Text style={styles.saveBtnText}>{saving ? t("profileSettings.saving") : t("profileSettings.save")}</Text>
           </Pressable>
         </View>
 

@@ -2,6 +2,7 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { translate, useSettingsStore } from "@/store/settingsStore";
 
 /**
  * Push + local notifications for Soul Journal.
@@ -76,7 +77,7 @@ export async function scheduleReminder(prefs: ReminderPrefs): Promise<void> {
   await Notifications.scheduleNotificationAsync({
     content: {
       title: "✨ Soul Journal",
-      body: "C'est le moment d'écrire — une pensée suffit.",
+      body: translate("notif.body", useSettingsStore.getState().language),
       sound: "default",
     },
     trigger: {

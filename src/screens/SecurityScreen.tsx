@@ -23,25 +23,25 @@ export default function SecurityScreen() {
 
   const changePassword = async () => {
     if (next.length < 6) {
-      Alert.alert("Mot de passe", "Le nouveau mot de passe doit avoir 6+ caractères.");
+      Alert.alert(t("security.password"), t("security.pwTooShort"));
       return;
     }
     if (next !== confirm) {
-      Alert.alert("Mot de passe", "Les mots de passe ne correspondent pas.");
+      Alert.alert(t("security.password"), t("security.pwMismatch"));
       return;
     }
     setBusy(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: next });
       if (error) throw error;
-      Alert.alert("✓", "Mot de passe mis à jour.");
+      Alert.alert(t("common.ok"), t("security.pwUpdated"));
       setCurrent("");
       setNext("");
       setConfirm("");
       navigation.goBack();
     } catch (e: any) {
       console.warn("password error", e);
-      Alert.alert("Erreur", e?.message ?? "Impossible de changer le mot de passe.");
+      Alert.alert(t("common.error"), e?.message ?? t("security.pwChangeFailed"));
     } finally {
       setBusy(false);
     }
@@ -54,7 +54,7 @@ export default function SecurityScreen() {
           <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.iconBtnText}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>🛡️ Sécurité</Text>
+          <Text style={styles.headerTitle}>{t("security.title")}</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -63,22 +63,22 @@ export default function SecurityScreen() {
           <View style={styles.rowTop}>
             <Text style={styles.rowEmoji}>🔐</Text>
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.rowTitle}>Code PIN</Text>
+              <Text style={styles.rowTitle}>{t("security.pinStatus")}</Text>
               <Text style={styles.rowDesc}>
-                {hasPin ? "Activé — verrouille l'application à l'ouverture." : "Non configuré."}
+                {hasPin ? t("security.pinActive") : t("security.notConfigured")}
               </Text>
             </View>
           </View>
           <Pressable style={styles.linkBtn} onPress={() => navigation.navigate("PinSettings")}>
-            <Text style={styles.linkText}>{hasPin ? "Gérer le PIN →" : "Configurer le PIN →"}</Text>
+            <Text style={styles.linkText}>{hasPin ? t("security.managePin") : t("security.setPin")}</Text>
           </Pressable>
         </View>
 
         {/* Change password */}
         <View style={[styles.card, shadows.card]}>
-          <Text style={styles.cardTitle}>Changer le mot de passe</Text>
+          <Text style={styles.cardTitle}>{t("security.changePwTitle")}</Text>
 
-          <Text style={styles.label}>Mot de passe actuel</Text>
+          <Text style={styles.label}>{t("security.currentPw")}</Text>
           <TextInput
             style={[styles.input, shadows.soft]}
             secureTextEntry
@@ -89,18 +89,18 @@ export default function SecurityScreen() {
             autoCapitalize="none"
           />
 
-          <Text style={styles.label}>Nouveau mot de passe</Text>
+          <Text style={styles.label}>{t("security.newPw")}</Text>
           <TextInput
             style={[styles.input, shadows.soft]}
             secureTextEntry
             value={next}
             onChangeText={setNext}
-            placeholder="6+ caractères"
+            placeholder={t("security.minChars")}
             placeholderTextColor={colors.textFaint}
             autoCapitalize="none"
           />
 
-          <Text style={styles.label}>Confirmer</Text>
+          <Text style={styles.label}>{t("security.confirmPw")}</Text>
           <TextInput
             style={[styles.input, shadows.soft]}
             secureTextEntry
@@ -115,13 +115,13 @@ export default function SecurityScreen() {
             {busy ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.saveBtnText}>Mettre à jour le mot de passe</Text>
+              <Text style={styles.saveBtnText}>{t("security.changePassword")}</Text>
             )}
           </Pressable>
         </View>
 
         <Text style={styles.footnote}>
-          La connexion reste active après le changement — reconnectez-vous avec le nouveau mot de passe au prochain démarrage.
+          {t("security.staysActive")}
         </Text>
       </ScrollView>
     </LinearGradient>

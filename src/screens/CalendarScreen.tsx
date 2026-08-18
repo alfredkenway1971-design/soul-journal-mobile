@@ -8,7 +8,7 @@ import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
-import { useT } from "@/store/settingsStore";
+import { useT, useSettingsStore, localeFor } from "@/store/settingsStore";
 
 const MOOD_EMOJI: Record<string, string> = {
   happy: "😊", good: "😇", fine: "😌", sad: "😔", unhappy: "😢",
@@ -100,7 +100,7 @@ export default function CalendarScreen() {
             <Text style={styles.monthArrow}>‹</Text>
           </Pressable>
           <Text style={styles.monthLabel}>
-            {month.toLocaleDateString("fr-CA", { month: "long", year: "numeric" })}
+            {month.toLocaleDateString(localeFor(useSettingsStore.getState().language), { month: "long", year: "numeric" })}
           </Text>
           <Pressable onPress={() => shiftMonth(1)} hitSlop={10}>
             <Text style={styles.monthArrow}>›</Text>
@@ -139,10 +139,10 @@ export default function CalendarScreen() {
 
         {/* Selected day entries */}
         <Text style={styles.sectionLabel}>
-          {selectedKey ? new Date(selectedKey + "T12:00:00").toLocaleDateString("fr-CA", { weekday: "long", day: "numeric", month: "long" }) : "Touchez un jour"}
+          {selectedKey ? new Date(selectedKey + "T12:00:00").toLocaleDateString("fr-CA", { weekday: "long", day: "numeric", month: "long" }) : t("calendar.tapDay")}
         </Text>
         {selectedEntries.length === 0 ? (
-          <Text style={styles.empty}>Aucune entrée ce jour.</Text>
+          <Text style={styles.empty}>{t("calendar.noEntries")}</Text>
         ) : (
           selectedEntries.map((e) => (
             <Pressable

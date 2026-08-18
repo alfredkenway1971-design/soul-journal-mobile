@@ -7,7 +7,7 @@ import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { resolveAvatarUrl } from "@/lib/avatar";
 import { useAuthStore } from "@/store/authStore";
-import { useSettingsStore, useT } from "@/store/settingsStore";
+import { useSettingsStore, useT, localeFor } from "@/store/settingsStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -318,8 +318,8 @@ export default function HomeScreen() {
           >
             <View style={styles.entryTop}>
               <Text style={styles.entryDate}>
-                {new Date(item.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })},{" "}
-                {new Date(item.created_at).toLocaleDateString("en-US", { weekday: "long" })}
+                {new Date(item.created_at).toLocaleDateString(localeFor(useSettingsStore.getState().language), { month: "short", day: "numeric" })},{" "}
+                {new Date(item.created_at).toLocaleDateString(localeFor(useSettingsStore.getState().language), { weekday: "long" })}
               </Text>
               {item.duration && (
                 <View style={styles.audioRow}>

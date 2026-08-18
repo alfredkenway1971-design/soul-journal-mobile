@@ -27,11 +27,11 @@ export default function ThemesScreen() {
           <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.iconBtnText}>←</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>🎨 Thèmes</Text>
+          <Text style={styles.headerTitle}>{t("themes.title")}</Text>
           <View style={{ width: 40 }} />
         </View>
 
-        <Text style={styles.sectionLabel}>Choisissez votre ambiance (clair uniquement)</Text>
+        <Text style={styles.sectionLabel}>{t("themes.pickLabel")}</Text>
 
         <View style={[styles.card, shadows.card]}>
           {THEME_OPTIONS.map((o) => {
@@ -44,8 +44,8 @@ export default function ThemesScreen() {
               >
                 <View style={[styles.swatch, { backgroundColor: o.swatch }]} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.optionLabel}>{o.label}</Text>
-                  <Text style={styles.optionSub}>{o.desc}</Text>
+                  <Text style={styles.optionLabel}>{t(o.labelKey)}</Text>
+                  <Text style={styles.optionSub}>{t(o.descKey)}</Text>
                 </View>
                 {active && <Text style={styles.check}>✓</Text>}
               </Pressable>
@@ -54,7 +54,7 @@ export default function ThemesScreen() {
         </View>
 
         <Text style={styles.footnote}>
-          Le thème est enregistré sur cet appareil.
+          {t("themes.saved")}
         </Text>
       </ScrollView>
     </LinearGradient>

@@ -373,13 +373,13 @@ export default function RecordScreen() {
           style={[styles.dreamChip, isDream && styles.dreamChipActive]}
           onPress={() => setIsDream((v) => !v)}
         >
-          <Text style={styles.dreamChipText}>🌙 {isDream ? "Rêve marqué — retirer" : "Marquer comme un rêve"}</Text>
+          <Text style={styles.dreamChipText}>🌙 {isDream ? t("record.dreamMarked") : t("record.markDream")}</Text>
         </Pressable>
 
         {/* Dream reflection result */}
         {(dreamReflection || dreamLoading) && (
           <View style={[styles.dreamCard, shadows.card]}>
-            <Text style={styles.dreamTitle}>🌙 Réflexion sur votre rêve</Text>
+            <Text style={styles.dreamTitle}>{t("record.dreamReflection")}</Text>
             {dreamLoading ? (
               <ActivityIndicator color={colors.primary} style={{ marginTop: 8 }} />
             ) : (

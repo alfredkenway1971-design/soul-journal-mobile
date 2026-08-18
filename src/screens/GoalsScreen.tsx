@@ -18,7 +18,15 @@ interface Goal {
 }
 
 const GOAL_SCAN_URL = "https://soul-journal-seven.vercel.app/api/goal-scan";
-const GOAL_CATEGORIES = ["Santé", "Carrière", "Finances", "Relations", "Croissance", "Autre"];
+const GOAL_CATEGORIES = [
+  { value: "Santé", key: "goals.health" },
+  { value: "Carrière", key: "goals.career" },
+  { value: "Finances", key: "goals.finances" },
+  { value: "Relations", key: "goals.relationships" },
+  { value: "Croissance", key: "goals.growth" },
+  { value: "Autre", key: "goals.other" },
+];
+const CAT_KEY: Record<string, string> = Object.fromEntries(GOAL_CATEGORIES.map((c) => [c.value, c.key]));
 
 export default function GoalsScreen() {
   const navigation = useNavigation();
@@ -31,7 +39,7 @@ export default function GoalsScreen() {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [newCategory, setNewCategory] = useState(GOAL_CATEGORIES[0]);
+  const [newCategory, setNewCategory] = useState<string>(GOAL_CATEGORIES[0].value);
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<{ goal: string; count: number; status: string }[] | null>(null);
 
@@ -109,7 +117,7 @@ export default function GoalsScreen() {
       if (Array.isArray(json?.results)) setScanResult(json.results);
     } catch (e) {
       console.warn("goal scan error", e);
-      Alert.alert("Goal scan", "Impossible d'analyser vos objectifs. Réessayez.");
+      Alert.alert(t("goals.title"), t("goals.scanFailed"));
     } finally {
       setScanning(false);
     }
@@ -132,7 +140,7 @@ export default function GoalsScreen() {
           <View style={[styles.addCard, shadows.soft]}>
             <TextInput
               style={styles.input}
-              placeholder="Nouvel objectif…"
+              placeholder={t("goals.newPlaceholder")}
               placeholderTextColor={colors.textFaint}
               value={newTitle}
               onChangeText={setNewTitle}
@@ -140,18 +148,18 @@ export default function GoalsScreen() {
             <View style={styles.catRow}>
               {GOAL_CATEGORIES.map((c) => (
                 <Pressable
-                  key={c}
-                  style={[styles.catChip, newCategory === c && styles.catChipActive]}
-                  onPress={() => setNewCategory(c)}
+                  key={c.value}
+                  style={[styles.catChip, newCategory === c.value && styles.catChipActive]}
+                  onPress={() => setNewCategory(c.value)}
                 >
-                  <Text style={[styles.catChipText, newCategory === c && { color: colors.primary, fontWeight: "700" }]}>
-                    {c}
+                  <Text style={[styles.catChipText, newCategory === c.value && { color: colors.primary, fontWeight: "700" }]}>
+                    {t(c.key)}
                   </Text>
                 </Pressable>
               ))}
             </View>
             <Pressable style={styles.addBtn} onPress={addGoal}>
-              <Text style={styles.addBtnText}>Ajouter</Text>
+              <Text style={styles.addBtnText}>{t("goals.add")}</Text>
             </Pressable>
           </View>
         )}
@@ -162,7 +170,7 @@ export default function GoalsScreen() {
           <View style={[styles.emptyCard, shadows.soft]}>
             <Text style={styles.emptyEmoji}>🎯</Text>
             <Text style={styles.emptyText}>
-              Ajoutez vos objectifs — l'IA analyse vos entrées pour suivre vos progrès.
+              {t("goals.desc")}
             </Text>
           </View>
         ) : (
@@ -172,7 +180,7 @@ export default function GoalsScreen() {
                 <Text style={styles.goalIcon}>{g.icon}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.goalTitle}>{g.title}</Text>
-                  <Text style={styles.goalCat}>{g.category}</Text>
+                  <Text style={styles.goalCat}>{CAT_KEY[g.category] ? t(CAT_KEY[g.category]) : g.category}</Text>
                 </View>
                 <Pressable onPress={() => removeGoal(g.id)} hitSlop={8}>
                   <Text style={styles.goalDelete}>✕</Text>
@@ -184,18 +192,20 @@ export default function GoalsScreen() {
               {scanning ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.scanBtnText}>✨ Analyser mes progrès (IA)</Text>
+                <Text style={styles.scanBtnText}>{t("goals.analyze")}</Text>
               )}
             </Pressable>
 
             {scanResult && (
               <View style={[styles.resultCard, shadows.card]}>
-                <Text style={styles.resultTitle}>Progrès récents</Text>
+                <Text style={styles.resultTitle}>{t("goals.recentProgress")}</Text>
                 {scanResult.map((r, i) => (
                   <View key={i} style={styles.resultRow}>
                     <Text style={styles.resultGoal}>{r.goal}</Text>
                     <Text style={styles.resultCount}>
-                      {r.count > 0 ? `📈 ${r.count} mention${r.count > 1 ? "s" : ""}` : "📭 pas encore"}
+                      {r.count > 0
+                        ? `📈 ${(r.count > 1 ? t("goals.mentions") : t("goals.mention")).replace("{count}", String(r.count))}`
+                        : `📭 ${t("goals.notYet")}`}
                     </Text>
                   </View>
                 ))}

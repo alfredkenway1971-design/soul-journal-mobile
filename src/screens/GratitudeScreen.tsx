@@ -69,7 +69,7 @@ export default function GratitudeScreen() {
       if (Array.isArray(json?.items)) setItems(json.items);
     } catch (e) {
       console.warn("gratitude error", e);
-      Alert.alert("Gratitude", "Impossible d'analyser. Réessayez.");
+      Alert.alert(t("profile.gratitude"), t("gratitude.scanFailed"));
     } finally {
       setLoading(false);
       setScanning(false);
@@ -107,7 +107,7 @@ export default function GratitudeScreen() {
           <View style={[styles.emptyCard, shadows.soft]}>
             <Text style={styles.emptyEmoji}>🌱</Text>
             <Text style={styles.emptyText}>
-              L'IA détecte les moments de gratitude dans vos entrées — écrivez sur ce dont vous êtes reconnaissant.
+              {t("gratitude.desc")}
             </Text>
           </View>
         ) : (

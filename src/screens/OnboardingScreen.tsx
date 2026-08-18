@@ -7,25 +7,25 @@ import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
-import { useSettingsStore } from "@/store/settingsStore";
+import { useSettingsStore, useT } from "@/store/settingsStore";
 import { LANGUAGES } from "@/i18n/translations";
 
 const QUESTIONS = [
-  { id: "identity", title: "Parlez-moi de vous", subtitle: "Qu'est-ce qui vous amène ici ? Partagez un peu qui vous êtes." },
-  { id: "growth", title: "Que voulez-vous améliorer ?", subtitle: "Quels changements ou croissance cherchez-vous ?" },
-  { id: "pride", title: "De quoi êtes-vous fier ?", subtitle: "Parlez-moi de quelque chose qui vous rend fier." },
-  { id: "blockers", title: "Qu'est-ce qui vous retient ?", subtitle: "Quels schémas ou obstacles se mettent en travers ?" },
-  { id: "fears", title: "Qu'est-ce qui vous fait peur ?", subtitle: "De quoi craignez-vous de perdre, d'échouer ou de devenir ?" },
-  { id: "alive", title: "Quand vous sentez-vous vivant ?", subtitle: "Quels moments ou activités vous motivent vraiment ?" },
+  { id: "identity", titleKey: "onb.qIdentity", subKey: "onb.qIdentitySub" },
+  { id: "growth", titleKey: "onb.qImprove", subKey: "onb.qImproveSub" },
+  { id: "pride", titleKey: "onb.qProud", subKey: "onb.qProudSub" },
+  { id: "blockers", titleKey: "onb.qBlockers", subKey: "onb.qPatterns" },
+  { id: "fears", titleKey: "onb.qFears", subKey: "onb.qFearsSub" },
+  { id: "alive", titleKey: "onb.qAlive", subKey: "onb.qMotivate" },
 ];
 
 const WORLDVIEWS = [
-  { label: "Spirituel", emoji: "✨", value: "Spiritual" },
-  { label: "Sans préférence", emoji: "🌍", value: "No preference" },
-  { label: "Chrétien", emoji: "✝️", value: "Christianity" },
-  { label: "Islam", emoji: "☪️", value: "Islam" },
-  { label: "Bouddhisme", emoji: "☸️", value: "Buddhism" },
-  { label: "Hindouisme", emoji: "🕉️", value: "Hinduism" },
+  { labelKey: "onb.spiritual", emoji: "✨", value: "Spiritual" },
+  { labelKey: "onb.noPreference", emoji: "🌍", value: "No preference" },
+  { labelKey: "onb.christian", emoji: "✝️", value: "Christianity" },
+  { labelKey: "onb.islam", emoji: "☪️", value: "Islam" },
+  { labelKey: "onb.buddhism", emoji: "☸️", value: "Buddhism" },
+  { labelKey: "onb.hinduism", emoji: "🕉️", value: "Hinduism" },
 ];
 
 interface SoulProfile {
@@ -36,6 +36,7 @@ interface SoulProfile {
 
 export default function OnboardingScreen() {
   const user = useAuthStore((s) => s.user);
+  const t = useT();
   const appFonts = useAppFonts();
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
@@ -55,7 +56,7 @@ export default function OnboardingScreen() {
     setStep(8);
     try {
       const { data, error } = await supabase.functions.invoke("analyze-soul-profile", {
-        body: { answers, worldview, language: "fr" },
+        body: { answers, worldview, language: useSettingsStore.getState().language },
       });
       if (error) throw error;
       if (!data?.profile) throw new Error("no profile");
@@ -71,7 +72,7 @@ export default function OnboardingScreen() {
       setStep(9);
     } catch (e) {
       console.warn("analyze error", e);
-      Alert.alert("Erreur", "L'analyse a échoué. Réessayez.");
+      Alert.alert(t("common.error"), t("onb.analysisFailed"));
       setStep(7);
     } finally {
       setBusy(false);
@@ -90,7 +91,7 @@ export default function OnboardingScreen() {
     await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user!.id);
     // Trigger a refresh of the auth-driven UI
     useAuthStore.setState((s) => ({ ...s }));
-    Alert.alert("✨ Bienvenue !", "Votre profil est prêt. Bonne écriture !");
+    Alert.alert(t("onb.welcomeTitle"), t("onb.profileReady"));
   };
 
   const isLastStep = step === 9;
@@ -108,8 +109,8 @@ export default function OnboardingScreen() {
 
           {step === 0 && (
             <>
-              <Text style={styles.title}>🌍 Choisissez votre langue</Text>
-              <Text style={styles.subtitle}>Votre journal s'affichera dans cette langue.</Text>
+              <Text style={styles.title}>{t("onb.chooseLang")}</Text>
+              <Text style={styles.subtitle}>{t("onb.langSubtitle")}</Text>
               <View style={[styles.card, shadows.card]}>
                 {LANGUAGES.map((l) => (
                   <Pressable key={l.code} style={styles.langRow} onPress={async () => { await setLanguage(l.code); }}>
@@ -123,12 +124,12 @@ export default function OnboardingScreen() {
 
           {step >= 1 && step <= 6 && (
             <>
-              <Text style={styles.stepBadge}>Question {step}/6</Text>
-              <Text style={styles.title}>{QUESTIONS[step - 1].title}</Text>
-              <Text style={styles.subtitle}>{QUESTIONS[step - 1].subtitle}</Text>
+              <Text style={styles.stepBadge}>{t("onb.questionLabel").replace("{n}", String(step))}</Text>
+              <Text style={styles.title}>{t(QUESTIONS[step - 1].titleKey)}</Text>
+              <Text style={styles.subtitle}>{t(QUESTIONS[step - 1].subKey)}</Text>
               <TextInput
                 style={[styles.input, shadows.soft]}
-                placeholder="Écrivez votre réponse…"
+                placeholder={t("onb.answerPlaceholder")}
                 placeholderTextColor={colors.textFaint}
                 multiline
                 value={answers[step - 1]}
@@ -140,8 +141,8 @@ export default function OnboardingScreen() {
 
           {step === 7 && (
             <>
-              <Text style={styles.title}>🌍 Croyances & vision du monde</Text>
-              <Text style={styles.subtitle}>Optionnel — aide l'IA à adapter ses conseils.</Text>
+              <Text style={styles.title}>{t("onb.beliefs")}</Text>
+              <Text style={styles.subtitle}>{t("onb.optional")}</Text>
               <View style={[styles.card, shadows.card]}>
                 {WORLDVIEWS.map((w) => {
                   const active = worldview === w.value;
@@ -152,7 +153,7 @@ export default function OnboardingScreen() {
                       onPress={() => setWorldview(w.value)}
                     >
                       <Text style={styles.wvEmoji}>{w.emoji}</Text>
-                      <Text style={[styles.wvLabel, active && { color: colors.primary, fontWeight: "700" }]}>{w.label}</Text>
+                      <Text style={[styles.wvLabel, active && { color: colors.primary, fontWeight: "700" }]}>{t(w.labelKey)}</Text>
                     </Pressable>
                   );
                 })}
@@ -163,29 +164,29 @@ export default function OnboardingScreen() {
           {step === 8 && (
             <View style={styles.analyzing}>
               <ActivityIndicator color={colors.primary} size="large" />
-              <Text style={styles.analyzingText}>Analyse de votre profil…</Text>
-              <Text style={styles.analyzingSub}>L'IA lit vos réponses pour créer votre portrait.</Text>
+              <Text style={styles.analyzingText}>{t("onb.analyzing")}</Text>
+              <Text style={styles.analyzingSub}>{t("onb.aiReads")}</Text>
             </View>
           )}
 
           {step === 9 && profile && (
             <>
-              <Text style={styles.title}>🪞 Votre profil</Text>
+              <Text style={styles.title}>{t("onb.profileTitle")}</Text>
               {profile.personality_type && (
                 <View style={[styles.card, shadows.card]}>
-                  <Text style={styles.cardLabel}>Type de personnalité</Text>
+                  <Text style={styles.cardLabel}>{t("onb.personalityType")}</Text>
                   <Text style={styles.cardText}>{profile.personality_type}</Text>
                 </View>
               )}
               {profile.summary && (
                 <View style={[styles.card, shadows.card]}>
-                  <Text style={styles.cardLabel}>Résumé</Text>
+                  <Text style={styles.cardLabel}>{t("onb.summary")}</Text>
                   <Text style={styles.cardText}>{profile.summary}</Text>
                 </View>
               )}
               {profile.strengths && profile.strengths.length > 0 && (
                 <View style={[styles.card, shadows.card]}>
-                  <Text style={styles.cardLabel}>Vos forces</Text>
+                  <Text style={styles.cardLabel}>{t("onb.strengths")}</Text>
                   {profile.strengths.map((s, i) => (
                     <Text key={i} style={styles.strength}>• {s}</Text>
                   ))}
@@ -197,12 +198,12 @@ export default function OnboardingScreen() {
           {/* Footer */}
           {!isLastStep && (
             <Pressable style={[styles.nextBtn, shadows.soft, (!canProceed || busy) && { opacity: 0.5 }]} onPress={next} disabled={!canProceed || busy}>
-              <Text style={styles.nextText}>{step === 7 ? "✨ Analyser mon profil" : "Continuer"}</Text>
+              <Text style={styles.nextText}>{step === 7 ? t("onb.analyzeBtn") : t("onb.continue")}</Text>
             </Pressable>
           )}
           {isLastStep && (
             <Pressable style={[styles.nextBtn, shadows.soft]} onPress={finish}>
-              <Text style={styles.nextText}>Commencer ✨</Text>
+              <Text style={styles.nextText}>{t("onb.start")}</Text>
             </Pressable>
           )}
         </ScrollView>
