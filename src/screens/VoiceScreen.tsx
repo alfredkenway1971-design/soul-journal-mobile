@@ -41,6 +41,7 @@ export default function VoiceScreen() {
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   // Uploaded-sample metadata (kept so the API receives the file's real type/name)
   const [uploadedMeta, setUploadedMeta] = useState<{ name: string; mime: string } | null>(null);
+  const [sampleDuration, setSampleDuration] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const [creating, setCreating] = useState(false);
   const [clones, setClones] = useState<VoiceProfile[]>([]);
@@ -168,7 +169,27 @@ export default function VoiceScreen() {
       return;
     }
     setRecordedUri(uri);
-    setUploadedMeta(null); // live recording → default type/name
+    setUploadedMeta(null); setSampleDuration(null); // live recording → default type/name
+  };
+
+  /** Measure an audio file's duration (seconds) via expo-audio. */
+  const measureDuration = async (uri: string): Promise<number | null> => {
+    try {
+      const probe = createAudioPlayer({ uri });
+      const dur = await new Promise<number>((resolve) => {
+        const t = setTimeout(() => resolve(0), 6000);
+        probe.addListener("playbackStatusUpdate", (st) => {
+          if (st.duration && st.duration > 0) {
+            clearTimeout(t);
+            resolve(st.duration);
+          }
+        });
+      });
+      probe.remove();
+      return dur || null;
+    } catch {
+      return null;
+    }
   };
 
   /** Pick an existing audio file (mp3/wav/m4a) to use as the clone sample. */
@@ -211,6 +232,15 @@ export default function VoiceScreen() {
       }
       setRecordedUri(playableUri);
       setUploadedMeta({ name, mime });
+      // Measure the sample — Fish requires ~10s minimum; warn early (web parity)
+      const dur = await measureDuration(playableUri);
+      setSampleDuration(dur);
+      if (dur !== null && dur > 0 && dur < 10) {
+        Alert.alert(
+          "Échantillon trop court",
+          "Fish Audio exige au moins 10 secondes d'audio pour cloner une voix. Choisissez un enregistrement plus long."
+        );
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e) {
       console.warn("pick error", e);
@@ -220,8 +250,12 @@ export default function VoiceScreen() {
 
   const createClone = async () => {
     if (!recordedUri) return;
-    // Live recordings must be >= 10s; uploaded files are trusted (Fish validates them)
+    // Live recordings must be >= 10s (timer); uploaded files use measured duration
     if (!uploadedMeta && seconds < 10) {
+      Alert.alert("Voice clone", "L'échantillon doit durer au moins 10 secondes.");
+      return;
+    }
+    if (uploadedMeta && sampleDuration !== null && sampleDuration > 0 && sampleDuration < 10) {
       Alert.alert("Voice clone", "L'échantillon doit durer au moins 10 secondes.");
       return;
     }
@@ -250,7 +284,15 @@ export default function VoiceScreen() {
           audioName: uploadedMeta?.name ?? "voice_sample.m4a",
         }),
       });
-      if (!res.ok) throw new Error(`clone ${res.status}`);
+      if (!res.ok) {
+        // Read the server's error detail (Fish's reason) for a useful message
+        let detail = "";
+        try {
+          const j = await res.json();
+          detail = j?.error || "";
+        } catch {}
+        throw new Error(detail || `clone ${res.status}`);
+      }
       const json = await res.json();
       if (!json?.voiceId) throw new Error("no voiceId");
 
@@ -272,13 +314,20 @@ export default function VoiceScreen() {
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setRecordedUri(null);
-      setUploadedMeta(null);
+      setUploadedMeta(null); setSampleDuration(null);
       setTargetLang(null);
       await loadClones();
       Alert.alert("✨ Voix créée !", "Votre voix clonée est maintenant utilisée pour la lecture de vos entrées.");
-    } catch (e) {
-      console.warn("clone error", e);
-      Alert.alert("Erreur", "Impossible de créer le clone vocal. Réessayez.");
+    } catch (e: any) {
+      console.warn("clone error", e?.message || e);
+      const msg = e?.message || "";
+      // Show Fish's real reason when available (e.g. sample too short)
+      Alert.alert(
+        "Erreur",
+        msg.startsWith("clone") || !msg
+          ? "Impossible de créer le clone vocal. Réessayez."
+          : msg
+      );
     } finally {
       setCreating(false);
     }
@@ -352,7 +401,7 @@ export default function VoiceScreen() {
                   <Pressable
                     key={l.code}
                     style={[styles.langChip, has && styles.langChipDone, active && styles.langChipActive]}
-                    onPress={() => { setTargetLang(active ? null : l.code); setRecordedUri(null); setUploadedMeta(null); }}
+                    onPress={() => { setTargetLang(active ? null : l.code); setRecordedUri(null); setUploadedMeta(null); setSampleDuration(null); }}
                   >
                     <Text style={styles.langChipText}>{l.flag} {l.native} {has ? "✓" : ""}</Text>
                   </Pressable>
