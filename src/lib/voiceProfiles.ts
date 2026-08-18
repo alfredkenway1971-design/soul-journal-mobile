@@ -1,12 +1,11 @@
 import { supabase } from "@/lib/supabase";
 
 /**
- * voice_profiles sync via the `voice-profiles-sync` edge function.
+ * voice_profiles direct CRUD.
  *
- * The voice_profiles table has NO RLS policies ("permission denied for table
- * voice_profiles"), so direct writes fail for authenticated users. The edge
- * function verifies the caller's JWT then performs the operation with the
- * service role, scoped to their own user_id.
+ * The table is created + RLS-policied by the `ensure-voice-profiles` edge
+ * function (policy: auth.uid() = user_id). Direct queries now work for the
+ * authenticated user — same as the web app.
  */
 
 export interface VoiceProfileRow {
@@ -15,31 +14,34 @@ export interface VoiceProfileRow {
   updated_at?: string;
 }
 
-/** List this user's clones from the backend. */
+/** List this user's clones (RLS: own rows only). */
 export async function fetchVoiceProfiles(): Promise<VoiceProfileRow[]> {
-  const { data, error } = await supabase.functions.invoke("voice-profiles-sync", {
-    method: "GET",
-  });
+  const { data, error } = await supabase
+    .from("voice_profiles")
+    .select("lang, voice_id, updated_at");
   if (error) throw error;
-  return data?.profiles ?? [];
+  return (data ?? []) as VoiceProfileRow[];
 }
 
 /** Upsert one clone (user_id + lang is the primary key). */
 export async function saveVoiceProfile(lang: string, voiceId: string): Promise<void> {
-  const { data, error } = await supabase.functions.invoke("voice-profiles-sync", {
-    method: "POST",
-    body: { lang, voice_id: voiceId },
-  });
+  const { data, error } = await supabase
+    .from("voice_profiles")
+    .upsert(
+      { lang, voice_id: voiceId, updated_at: new Date().toISOString() },
+      { onConflict: "user_id,lang" }
+    )
+    .select("lang, voice_id")
+    .single();
   if (error) throw error;
-  if (!data?.profile) throw new Error("no profile returned");
+  if (!data) throw new Error("no profile returned");
 }
 
 /** Delete one clone for this user. */
 export async function removeVoiceProfile(lang: string): Promise<void> {
-  const { data, error } = await supabase.functions.invoke("voice-profiles-sync", {
-    method: "DELETE",
-    body: { lang },
-  });
+  const { data, error } = await supabase
+    .from("voice_profiles")
+    .delete()
+    .eq("lang", lang);
   if (error) throw error;
-  if (!data?.ok) throw new Error("delete failed");
 }
