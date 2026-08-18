@@ -4,18 +4,18 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 /** Light-only theme variants (Amer: no dark/black/blue-purple). */
 export const THEME_OPTIONS = [
   {
-    key: "sky",
-    label: "Ciel",
-    desc: "Bleu ciel doux (par défaut)",
-    swatch: "#b1d1f1",
-    gradient: ["#d2ecf9", "#b1d1f1", "#c4dff3"],
-  },
-  {
     key: "mint",
     label: "Menthe",
-    desc: "Vert menthe léger",
-    swatch: "#b8e6d0",
-    gradient: ["#e0f2e9", "#c3e8d8", "#d8efe6"],
+    desc: "Vert menthe doux (par défaut)",
+    swatch: "#e0f2e9",
+    gradient: ["#f0f5f1", "#e8f0ea", "#fcfefb"],
+  },
+  {
+    key: "sky",
+    label: "Ciel",
+    desc: "Bleu ciel doux",
+    swatch: "#b1d1f1",
+    gradient: ["#d2ecf9", "#b1d1f1", "#c4dff3"],
   },
   {
     key: "lilac",
@@ -44,7 +44,7 @@ interface ThemeState {
 }
 
 export const useThemeStore = create<ThemeState>((set) => ({
-  theme: "sky",
+  theme: "mint",
   setTheme: async (theme) => {
     set({ theme });
     try { await AsyncStorage.setItem(KEY, JSON.stringify({ theme })); } catch {}
@@ -63,5 +63,5 @@ export const useThemeStore = create<ThemeState>((set) => ({
 /** Active gradient for the current theme. */
 export function useThemeGradient() {
   const theme = useThemeStore((s) => s.theme);
-  return THEME_OPTIONS.find((o) => o.key === theme)?.gradient ?? ["#d2ecf9", "#b1d1f1", "#c4dff3"];
+  return THEME_OPTIONS.find((o) => o.key === theme)?.gradient ?? ["#f0f5f1", "#e8f0ea", "#fcfefb"];
 }

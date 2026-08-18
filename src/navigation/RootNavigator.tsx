@@ -1,3 +1,4 @@
+import { View } from "react-native";
 import { useEffect, useState } from "react";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -80,9 +81,11 @@ const navTheme = {
 function MainTabs() {
   const t = useT();
   const appFonts = useAppFonts();
+  // Web BottomNav parity: Home, Calendar, Record (center mic), Library, Profile
   const TABS = [
     { name: "Home", component: HomeScreen, icon: "home-outline" as const, iconActive: "home" as const, label: t("nav.home") },
-    { name: "Record", component: RecordScreen, icon: "mic-outline" as const, iconActive: "mic" as const, label: t("nav.record") },
+    { name: "Calendar", component: CalendarScreen, icon: "calendar-outline" as const, iconActive: "calendar" as const, label: t("nav.calendar") },
+    { name: "Record", component: RecordScreen, icon: "mic" as const, iconActive: "mic" as const, label: t("nav.record"), center: true },
     { name: "Library", component: LibraryScreen, icon: "library-outline" as const, iconActive: "library" as const, label: t("nav.library") },
     { name: "Profile", component: ProfileScreen, icon: "person-outline" as const, iconActive: "person" as const, label: t("nav.profile") },
   ];
@@ -94,22 +97,21 @@ function MainTabs() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textFaint,
         tabBarStyle: {
-          backgroundColor: colors.cardGlassStrong,
-          borderTopColor: colors.glassBorder,
+          backgroundColor: "rgba(255,255,255,0.78)",
+          borderTopColor: "rgba(255,255,255,0.6)",
           borderTopWidth: 1,
-          height: 64,
-          paddingBottom: 8,
+          height: 70,
+          paddingBottom: 10,
           paddingTop: 6,
           position: "absolute",
-          left: 12,
-          right: 12,
-          bottom: 10,
-          borderRadius: 24,
-          shadowColor: "rgba(26,63,110,0.25)",
-          shadowOffset: { width: 0, height: 8 },
+          left: 0,
+          right: 0,
+          bottom: 0,
+          shadowColor: "rgba(26,63,110,0.18)",
+          shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 1,
-          shadowRadius: 20,
-          elevation: 8,
+          shadowRadius: 16,
+          elevation: 10,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: "600", fontFamily: appFonts.bodySemiBold },
       }}
@@ -121,9 +123,32 @@ function MainTabs() {
           component={tab.component}
           options={{
             tabBarLabel: tab.label,
-            tabBarIcon: ({ focused, color, size }) => (
-              <Ionicons name={focused ? tab.iconActive : tab.icon} size={size} color={color} />
-            ),
+            tabBarIcon: ({ focused, color, size }) =>
+              tab.center ? (
+                // Big center mic — web BottomNav parity
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 999,
+                    marginTop: -22,
+                    backgroundColor: colors.primary,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 2,
+                    borderColor: "rgba(255,255,255,0.8)",
+                    shadowColor: "rgba(29,129,237,0.45)",
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 1,
+                    shadowRadius: 14,
+                    elevation: 6,
+                  }}
+                >
+                  <Ionicons name="mic" size={24} color="#ffffff" />
+                </View>
+              ) : (
+                <Ionicons name={focused ? tab.iconActive : tab.icon} size={size} color={color} />
+              ),
           }}
         />
       ))}

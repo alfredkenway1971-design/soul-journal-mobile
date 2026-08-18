@@ -1,18 +1,17 @@
 /**
- * Soul Journal design tokens — SKY-BLUE GLASSMORPHIC (matches the web app).
- * Light/white only. NO dark navy / purple / emerald.
- * Palette mirrors the web app's index.css HSL tokens (converted to hex):
- *   --background: 205 70% 88%  |  --primary: 211 85% 52%  |  gradient-cream: 200/75/90 → 210/70/82 → 205/65/86
+ * Soul Journal design tokens — LIGHT MINT/EMERALD (matches the web's emerald theme
+ * as shown in Amer's screenshot: hsl(140 20% 95%) → hsl(145 18% 90%)).
+ * Light/white only. NO dark navy / purple.
  */
 export const colors = {
-  // Primary — ocean blue (web --primary: hsl(211 85% 52%))
+  // Primary — ocean blue (web --primary: hsl(211 85% 52%), shown in screenshot)
   primary: "#1d81ed",
   primarySoft: "#3db8f5",
   primaryLight: "#e0f2fe",
-  // Background gradient (web --gradient-cream)
-  bgTop: "#d2ecf9",
-  bgMid: "#b1d1f1",
-  bgBottom: "#c4dff3",
+  // Background gradient — web emerald theme (screenshot: #F0F5F1 → #FCFEFB)
+  bgTop: "#f0f5f1",
+  bgMid: "#e8f0ea",
+  bgBottom: "#fcfefb",
   // Cards — frosted white glass (web .glass-premium)
   card: "#ffffff",
   cardGlass: "rgba(255,255,255,0.68)",
