@@ -16,7 +16,7 @@ import UpgradePrompt from "@/components/UpgradePrompt";
 const SOUL_MIRROR_URL = "https://soul-journal-seven.vercel.app/api/soul-mirror";
 
 interface Portrait {
-  emotionalSummary?: { dominantMoods?: string[]; text?: string };
+  emotionalSummary?: { dominantMoods?: { mood: string; days: number }[]; text?: string };
   hiddenPatterns?: string;
   goalProgress?: { goal?: string; status?: string }[];
   sourcesOfJoy?: string[];
@@ -71,8 +71,13 @@ export default function SoulMirrorScreen() {
     setLoading(true);
     setPortrait(null);
     try {
+      // Refresh the session FIRST — expired JWTs (1h) make the API return 401
       const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
+      let token = sessionData.session?.access_token;
+      if (!token) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        token = refreshed.session?.access_token;
+      }
       if (!token) throw new Error("no session");
 
       const { data: entries } = await supabase
@@ -110,7 +115,48 @@ export default function SoulMirrorScreen() {
           language: langName,
         }),
       });
-      if (!res.ok) throw new Error(`mirror ${res.status}`);
+      if (res.status === 401) {
+        // Token was stale despite refresh — retry once with a fresh session
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        const retryToken = refreshed.session?.access_token;
+        if (!retryToken) throw new Error("no session");
+        const retry = await fetch(SOUL_MIRROR_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${retryToken}`,
+          },
+          body: JSON.stringify({
+            month: selected,
+            entries: (entries ?? []).map((e) => ({
+              text: (e.enhanced_text || e.original_transcription || "").substring(0, 800),
+              mood: e.mood || "fine",
+              created_at: e.created_at,
+            })),
+            goals,
+            language: langName,
+          }),
+        });
+        if (!retry.ok) {
+          const errBody = await retry.json().catch(() => ({}));
+          throw new Error(errBody?.error || `mirror ${retry.status}`);
+        }
+        const retryJson = await retry.json();
+        if (retryJson?.empty) {
+          setPortrait({ emotionalSummary: { text: "No entries this month." } });
+          return;
+        }
+        if (!retryJson?.portrait) throw new Error("no portrait");
+        setPortrait(retryJson.portrait);
+        try {
+          await AsyncStorage.setItem(cacheKey, JSON.stringify(retryJson.portrait));
+        } catch {}
+        return;
+      }
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody?.error || `mirror ${res.status}`);
+      }
       const json = await res.json();
       if (json?.empty) {
         setPortrait({ emotionalSummary: { text: "No entries this month." } });
@@ -121,9 +167,15 @@ export default function SoulMirrorScreen() {
       try {
         await AsyncStorage.setItem(cacheKey, JSON.stringify(json.portrait));
       } catch {}
-    } catch (e) {
-      console.warn("soul mirror error", e);
-      Alert.alert("Soul Mirror", "Impossible de générer le portrait. Réessayez.");
+    } catch (e: any) {
+      console.warn("soul mirror error", e?.message || e);
+      const msg = e?.message || "";
+      Alert.alert(
+        "Soul Mirror",
+        msg.startsWith("mirror") || msg === "no portrait" || msg === "no session" || !msg
+          ? "Impossible de générer le portrait. Réessayez."
+          : msg
+      );
     } finally {
       setLoading(false);
     }
@@ -184,11 +236,15 @@ export default function SoulMirrorScreen() {
 
             {moods.length > 0 && (
               <View style={styles.moodRowWrap}>
-                {moods.map((m, i) => (
-                  <View key={i} style={styles.moodPill}>
-                    <Text style={styles.moodPillText}>{m}</Text>
-                  </View>
-                ))}
+                {moods.map((m, i) => {
+                  // API returns { mood, days } objects — render like the web
+                  const label = typeof m === "string" ? m : `${m.mood} · ${m.days}j`;
+                  return (
+                    <View key={i} style={styles.moodPill}>
+                      <Text style={styles.moodPillText}>{label}</Text>
+                    </View>
+                  );
+                })}
               </View>
             )}
 
