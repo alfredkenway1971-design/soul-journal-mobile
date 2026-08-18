@@ -94,6 +94,14 @@ export default function VoiceScreen() {
     loadClones();
   }, [loadClones]);
 
+  // Auto-select the language chip for the CURRENT app language on load, so the
+  // user always sees which language profile they are creating/overwriting
+  // (prevents silent overwrites — e.g. cloning twice both landing on "en").
+  useEffect(() => {
+    if (loading) return;
+    setTargetLang((prev) => prev ?? language ?? "en");
+  }, [loading, language]);
+
   const stopPlayback = async () => {
     const p = playerRef.current;
     playerRef.current = null;
@@ -380,7 +388,14 @@ export default function VoiceScreen() {
                   <View key={c.lang} style={[styles.cloneRow, shadows.soft]}>
                     <Text style={styles.cloneFlag}>{langFlag(c.lang)}</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.cloneName}>{langName(c.lang)}</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        <Text style={styles.cloneName}>{langName(c.lang)}</Text>
+                        {c.lang === language && (
+                          <View style={styles.defaultBadge}>
+                            <Text style={styles.defaultBadgeText}>Défaut</Text>
+                          </View>
+                        )}
+                      </View>
                       <Text style={styles.cloneId}>{c.voice_id.slice(0, 8)}…</Text>
                     </View>
                     <Pressable
@@ -524,6 +539,13 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   },
   reRecordText: { fontSize: 12, color: colors.primary, fontFamily: appFonts.bodySemiBold },
   cloneDelete: { fontSize: 16 },
+  defaultBadge: {
+    backgroundColor: "#e0f2fe",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  defaultBadgeText: { fontSize: 10, color: "#1d81ed", fontWeight: "700" },
   sectionLabel: { fontSize: 13, color: colors.textMuted, marginTop: 4, marginBottom: 8, fontFamily: appFonts.bodySemiBold },
   langRow: { flexDirection: "row", marginBottom: 16 },
   langChip: {
