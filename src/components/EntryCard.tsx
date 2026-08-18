@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { colors, fonts, glassCard, shadows } from "@/theme";
+import { colors, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { useT } from "@/store/settingsStore";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
@@ -19,10 +19,11 @@ interface Props {
   entry: { id: string; title: string | null; mood: string | null; created_at: string };
 }
 
+// Screenshot format: small date top-left ("16 août"), bold title, mood emoji right of title
 const fmtDate = (iso: string) => {
   try {
     const d = new Date(iso);
-    return `${d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" })} · ${d.toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}`;
+    return `${d.toLocaleDateString("fr-CA", { day: "numeric", month: "long" })} · ${d.toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}`;
   } catch {
     return iso;
   }
@@ -52,24 +53,27 @@ export default memo(function EntryCard({ entry }: Props) {
 
 const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   card: {
-    ...glassCard,
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
     padding: 16,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   date: {
-    fontSize: 12,
-    color: colors.textFaint,
+    fontSize: 11,
+    color: "#94a3b8",
     marginBottom: 6,
     fontFamily: appFonts.bodyMedium,
   },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.text,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1e293b",
     flex: 1,
     paddingRight: 8,
-    fontFamily: appFonts.bodySemiBold,
+    fontFamily: appFonts.bodyBold,
   },
   mood: { fontSize: 20 },
 });
