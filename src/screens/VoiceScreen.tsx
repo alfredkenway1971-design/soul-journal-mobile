@@ -6,13 +6,14 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAudioRecorder, requestRecordingPermissionsAsync, setAudioModeAsync, createAudioPlayer, RecordingPresets } from "expo-audio";
+import { useAudioRecorder, setAudioModeAsync, createAudioPlayer, RecordingPresets } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import * as FileSystem from "expo-file-system/legacy";
 import { useNavigation } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
+import { ensureMicPermission } from "@/lib/micPermission";
 import { useAuthStore } from "@/store/authStore";
 import { useT, useSettingsStore } from "@/store/settingsStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
@@ -53,7 +54,6 @@ export default function VoiceScreen() {
 
   useEffect(() => {
     setAudioModeAsync({ allowsRecording: true });
-    requestRecordingPermissionsAsync().catch(() => {});
     return () => {
       playerRef.current?.remove();
     };
@@ -138,11 +138,8 @@ export default function VoiceScreen() {
   const startRecording = async () => {
     try {
       await stopPlayback();
-      const perm = await requestRecordingPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert(t("auth.privacy"), t("auth.micDenied"));
-        return;
-      }
+      const ok = await ensureMicPermission();
+      if (!ok) return;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       // Back to recording mode (playback sets allowsRecording:false)
       try { await setAudioModeAsync({ allowsRecording: true }); } catch {}

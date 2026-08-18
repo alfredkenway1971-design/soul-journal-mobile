@@ -3,12 +3,13 @@ import {
   View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAudioRecorder, requestRecordingPermissionsAsync, setAudioModeAsync, RecordingPresets } from "expo-audio";
+import { useAudioRecorder, setAudioModeAsync, RecordingPresets } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import * as FileSystem from "expo-file-system/legacy";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
+import { ensureMicPermission } from "@/lib/micPermission";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore, useT } from "@/store/settingsStore";
 
@@ -46,9 +47,6 @@ export default function RecordScreen() {
 
   useEffect(() => {
     setAudioModeAsync({ allowsRecording: true });
-    // Ask for mic permission ONCE when the screen opens (not on first press),
-    // so recording starts immediately when the user taps the button.
-    requestRecordingPermissionsAsync().catch(() => {});
     return () => {
       // recorder is a shared object from the hook; nothing to unload
     };
@@ -56,11 +54,8 @@ export default function RecordScreen() {
 
   const startRecording = async () => {
     try {
-      const perm = await requestRecordingPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert(t("auth.privacy"), t("auth.micDenied"));
-        return;
-      }
+      const ok = await ensureMicPermission();
+      if (!ok) return;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await recorder.prepareToRecordAsync();
       recorder.record();
