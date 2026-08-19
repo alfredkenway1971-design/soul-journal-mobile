@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { translations } from "@/i18n/translations";
+import { bookBuilderTranslations } from "@/i18n/bookBuilderTranslations";
 
 export type AppLanguage = "en" | "fr" | "es" | "ar" | "zh" | "ja" | "sw" | "de";
 
@@ -48,6 +49,12 @@ export function translate(key: string, lang: AppLanguage = "fr"): string {
   if (val != null) return val;
   const enVal = translations.en?.[key];
   if (enVal != null) return enVal;
+  // Fallback layer for the Soul Book Builder keys (separate module, 8 langs).
+  const bb = bookBuilderTranslations[lang] ?? bookBuilderTranslations.en;
+  const bbVal = bb?.[key];
+  if (bbVal != null) return bbVal;
+  const bbEn = bookBuilderTranslations.en?.[key];
+  if (bbEn != null) return bbEn;
   return key;
 }
 
