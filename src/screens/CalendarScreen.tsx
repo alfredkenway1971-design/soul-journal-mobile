@@ -163,7 +163,7 @@ export default function CalendarScreen() {
 
 const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
-  content: { padding: 20, paddingBottom: 60 },
+  content: { padding: 20, paddingBottom: 110 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
   iconBtn: {
     width: 40, height: 40, borderRadius: 999,

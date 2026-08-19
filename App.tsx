@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useFonts, PlayfairDisplay_600SemiBold, PlayfairDisplay_700Bold } from "@expo-google-fonts/playfair-display";
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 import { Caveat_600SemiBold, Caveat_700Bold } from "@expo-google-fonts/caveat";
@@ -23,6 +23,7 @@ import { usePinStore } from "@/store/pinStore";
 import { setupPurchaseListener } from "@/lib/billing";
 import PinLockScreen from "@/screens/PinLockScreen";
 import RootNavigator from "@/navigation/RootNavigator";
+import { colors } from "@/theme";
 
 // Global Play Billing purchase listener — must be set before any purchase
 setupPurchaseListener();
@@ -76,7 +77,10 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      {hasPin && pinLocked ? <PinLockScreen /> : <RootNavigator />}
+      {/* Top safe-area so headers/back buttons never sit under the status bar / notch */}
+      <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.bgTop }}>
+        {hasPin && pinLocked ? <PinLockScreen /> : <RootNavigator />}
+      </SafeAreaView>
     </SafeAreaProvider>
   );
 }

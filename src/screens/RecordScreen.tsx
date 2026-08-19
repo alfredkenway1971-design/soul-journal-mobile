@@ -483,7 +483,7 @@ export default function RecordScreen() {
 
 const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
-  content: { padding: 20, paddingBottom: 24 },
+  content: { padding: 20, paddingBottom: 110 },
   title: {
     fontSize: 26,
     color: colors.text,

@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/theme";
 import { useAppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
@@ -81,6 +82,7 @@ const navTheme = {
 function MainTabs() {
   const t = useT();
   const appFonts = useAppFonts();
+  const insets = useSafeAreaInsets();
   // Web BottomNav parity: Home, Calendar, Record (center mic), Library, Profile
   const TABS = [
     { name: "Home", component: HomeScreen, icon: "home-outline" as const, iconActive: "home" as const, label: t("nav.home") },
@@ -100,8 +102,8 @@ function MainTabs() {
           backgroundColor: "rgba(255,255,255,0.78)",
           borderTopColor: "rgba(255,255,255,0.6)",
           borderTopWidth: 1,
-          height: 70,
-          paddingBottom: 10,
+          height: 60 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 8),
           paddingTop: 6,
           position: "absolute",
           left: 0,

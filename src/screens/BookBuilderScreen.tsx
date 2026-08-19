@@ -697,7 +697,7 @@ export default function BookBuilderScreen() {
 
 const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
-  content: { padding: 20, paddingBottom: 24 },
+  content: { padding: 20, paddingBottom: 60 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 14, marginBottom: 10 },
   iconBtn: {
     width: 40, height: 40, borderRadius: 999,
