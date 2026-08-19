@@ -80,13 +80,18 @@ const bgClass = (bg: PageBackground): string => {
 };
 
 const BG_CSS = `
+/* IMPORTANT: gradient stops must be FULLY OPAQUE. iOS Quartz PDF (expo-print)
+   drops the alpha channel inside gradient stops: the keyword "transparent"
+   (rgba(0,0,0,0)) and rgba(...) stops render as OPAQUE BLACK, producing black
+   pages in the exported PDF (fixed 2026-08-19). Colors below are the
+   pre-blended results of the old translucent stops over white. */
 .bg-lined {
   background-color: #ffffff;
-  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 23px, rgba(147,197,253,0.35) 23px, rgba(147,197,253,0.35) 24px);
+  background-image: repeating-linear-gradient(to bottom, #ffffff 0, #ffffff 23px, #d9ebfe 23px, #d9ebfe 24px);
 }
 .bg-dotted {
   background-color: #ffffff;
-  background-image: radial-gradient(rgba(120,120,120,0.22) 1.1px, transparent 1.1px);
+  background-image: radial-gradient(#e1e1e1 1.1px, #ffffff 1.1px);
   background-size: 16px 16px;
 }`;
 
@@ -178,7 +183,7 @@ const buildImageGalleryHTML = (photoUrls: string[], photoSize: PhotoSize, isRTL:
 const buildSoulReflectionHTML = (reflection: string, fs: number, px: (n: number) => number): string => {
   if (!reflection) return "";
   return `
-  <div style="margin-top:${px(28)}px;padding:${px(16)}px ${px(20)}px;border-radius:${px(14)}px;background:linear-gradient(135deg, rgba(139,92,246,0.08), rgba(236,72,153,0.06));border:1px solid rgba(139,92,246,0.15);">
+  <div style="margin-top:${px(28)}px;padding:${px(16)}px ${px(20)}px;border-radius:${px(14)}px;background:linear-gradient(135deg, #f6f2fe, #fef4f9);border:1px solid rgba(139,92,246,0.15);">
     <div style="display:flex;align-items:center;gap:${px(8)}px;margin-bottom:${px(8)}px;">
       <span style="font-size:${px(14)}px;">✨</span>
       <span style="font-size:${px(fs - 4)}px;font-weight:600;color:#7c3aed;letter-spacing:0.04em;">Message from Your Soul</span>
@@ -346,7 +351,9 @@ const buildEntryByLayout = (entry: JournalEntry, config: BookConfig, S: BookScal
 const buildDocShell = (bodyInner: string, fontCSS: string, fontImportUrl: string, S: BookScale, extraCss = ""): string => {
   const pageCss = S.fixed
     ? `.page { width:${S.pageW}px; height:${S.pageH}px; overflow:hidden; position:relative; page-break-after: always; }`
-    : `.page { width:${S.pageW}; min-height:${S.pageH}; position:relative; page-break-after: always; }`;
+    : /* 297mm = exact A5 height. 100vh under-resolves to ~80% of the page in
+         iOS print, leaving a white strip at the bottom of every page. */
+      `.page { width:${S.pageW}; min-height:297mm; position:relative; page-break-after: always; }`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=${S.fixed ? S.pageW : 420}">
 <link href="${fontImportUrl}" rel="stylesheet">
