@@ -46,7 +46,10 @@ export default function RecordScreen() {
   const [dreamLoading, setDreamLoading] = useState(false);
 
   useEffect(() => {
-    setAudioModeAsync({ allowsRecording: true });
+    // iOS REQUIRES playsInSilentMode:true together with allowsRecording:true —
+    // without it setAudioModeAsync throws InvalidAudioModeException and
+    // record() later fails with RecordingDisabledException.
+    setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
     return () => {
       // recorder is a shared object from the hook; nothing to unload
     };
@@ -58,9 +61,9 @@ export default function RecordScreen() {
       if (!ok) return;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       // iOS resets the AVAudioSession category after the permission flow and
-      // after any playback — re-enable recording mode right before recording
-      // (without this, record() throws RecordingDisabledException).
-      try { await setAudioModeAsync({ allowsRecording: true }); } catch {}
+      // after any playback — re-enable recording mode right before recording.
+      // iOS REQUIRES playsInSilentMode:true alongside allowsRecording:true.
+      try { await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true }); } catch {}
       await recorder.prepareToRecordAsync();
       recorder.record();
       setIsRecording(true);

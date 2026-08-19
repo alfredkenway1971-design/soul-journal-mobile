@@ -53,7 +53,10 @@ export default function VoiceScreen() {
   const playerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
 
   useEffect(() => {
-    setAudioModeAsync({ allowsRecording: true });
+    // iOS REQUIRES playsInSilentMode:true together with allowsRecording:true —
+    // without it setAudioModeAsync throws InvalidAudioModeException and
+    // record() later fails with RecordingDisabledException.
+    setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
     return () => {
       playerRef.current?.remove();
     };
@@ -141,8 +144,9 @@ export default function VoiceScreen() {
       const ok = await ensureMicPermission();
       if (!ok) return;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      // Back to recording mode (playback sets allowsRecording:false)
-      try { await setAudioModeAsync({ allowsRecording: true }); } catch {}
+      // Back to recording mode (playback sets allowsRecording:false).
+      // iOS REQUIRES playsInSilentMode:true alongside allowsRecording:true.
+      try { await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true }); } catch {}
       await recorder.prepareToRecordAsync();
       recorder.record();
       setIsRecording(true);
