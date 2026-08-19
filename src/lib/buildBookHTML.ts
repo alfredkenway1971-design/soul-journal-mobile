@@ -4,10 +4,10 @@
  * entry pages, back cover) that expo-print converts to a PDF, plus a
  * fixed-420px single-page variant for the in-app WebView preview.
  *
- * Physical-size parity: the web renders each page at 384dpi (SCALE=4) onto an
- * A5 canvas, so every web px value is divided by 4 and re-mapped to 96dpi px
- * (factor 0.2646) to land on the same physical size in print.
- * Ported 2026-08-19.
+ * Physical-size parity: the web designs every value in 96dpi CSS px (body
+ * 22px = 5.82 mm). expo-print renders at 72dpi points (1 CSS px = 1 PDF pt
+ * on a 420x595 A5 page), so the print factor is 72/96 = 0.75.
+ * Ported 2026-08-19; scale model measured + corrected 2026-08-19.
  */
 import {
   BookConfig, JournalEntry, CoverTemplate, PhotoSize, EntryLayout, PageBackground,
@@ -17,23 +17,36 @@ import {
 } from "@/lib/bookTypes";
 
 export interface BookScale {
-  /** Scale a web 4x px value to this output's px (96dpi print or 420px preview). */
+  /** Scale a web 4x px value to this output's px (print points or preview px). */
   px: (webPx: number) => number;
   pageW: number | string;
   pageH: number | string;
-  /** CSS unit suffix for fixed-size pages ("" for px, or use vh/100%). */
+  /** Use fixed-size page branches (no vh/percent) where the layout needs one. */
   fixed: boolean;
+  /** Content may exceed one page (continuous flow) — use min-height, not height+overflow. */
+  fluid?: boolean;
 }
 
+/**
+ * Print scale. expo-print (SDK 54, ExpoWKPDFRenderer) renders the HTML in a
+ * WKWebView whose frame equals the requested page size and draws 1 CSS px =
+ * 1 PDF point: a 420x595 pt A5 page. The web's font/photo values are 96dpi
+ * design px, so the print factor is 72/96 = 0.75 (e.g. body 22px -> 16.5pt,
+ * the same 5.82 mm physical size the web design intends).
+ * Measured 2026-08-19 on a real export: with the old 0.2646 factor the body
+ * text came out at 5.8pt (2 mm) — unreadable, and 100vh resolved to ~80% of
+ * the page. Page divs are therefore fixed at min-height: 595px = one A5 page.
+ */
 export const PDF_SCALE: BookScale = {
-  px: (n) => Math.round(n * 0.2646 * 10) / 10, // web 4x px -> 96dpi px (same physical mm)
+  px: (n) => Math.round(n * 0.75 * 10) / 10,
   pageW: "100%",
-  pageH: "100vh",
-  fixed: false,
+  pageH: 595,
+  fixed: true,
+  fluid: true,
 };
 
 export const PREVIEW_SCALE: BookScale = {
-  px: (n) => Math.round(n * 0.1877 * 10) / 10, // 420px wide preview canvas (420px ≈ 148mm)
+  px: (n) => Math.round(n * 0.75 * 10) / 10, // same physical proportions as print
   pageW: 420,
   pageH: 595,
   fixed: true,
@@ -80,19 +93,21 @@ const bgClass = (bg: PageBackground): string => {
 };
 
 const BG_CSS = `
-/* IMPORTANT: gradient stops must be FULLY OPAQUE. iOS Quartz PDF (expo-print)
-   drops the alpha channel inside gradient stops: the keyword "transparent"
-   (rgba(0,0,0,0)) and rgba(...) stops render as OPAQUE BLACK, producing black
-   pages in the exported PDF (fixed 2026-08-19). Colors below are the
-   pre-blended results of the old translucent stops over white. */
+/* Pattern spacing scaled to the 72dpi print model (web 24px line cycle x 0.75
+   = 18pt, 16px dot grid x 0.75 = 12pt). IMPORTANT: gradient stops must be
+   FULLY OPAQUE. iOS Quartz PDF (expo-print) drops the alpha channel inside
+   gradient stops: the keyword "transparent" (rgba(0,0,0,0)) and rgba(...)
+   stops render as OPAQUE BLACK, producing black pages in the exported PDF
+   (fixed 2026-08-19). Colors below are the pre-blended results of the old
+   translucent stops over white. */
 .bg-lined {
   background-color: #ffffff;
-  background-image: repeating-linear-gradient(to bottom, #ffffff 0, #ffffff 23px, #d9ebfe 23px, #d9ebfe 24px);
+  background-image: repeating-linear-gradient(to bottom, #ffffff 0, #ffffff 17px, #d9ebfe 17px, #d9ebfe 18px);
 }
 .bg-dotted {
   background-color: #ffffff;
-  background-image: radial-gradient(#e1e1e1 1.1px, #ffffff 1.1px);
-  background-size: 16px 16px;
+  background-image: radial-gradient(#e1e1e1 0.8px, #ffffff 0.8px);
+  background-size: 12px 12px;
 }`;
 
 /* ── Cover decorations ── */
@@ -123,8 +138,8 @@ const coverDecorations = (cover: CoverTemplate, S: BookScale): string => {
 
 const buildCoverHTML = (config: BookConfig, S: BookScale, fontCSS: string, fontImportUrl: string): string => {
   const px = S.px;
-  const color = COVER_TEXT_COLORS[config.cover];
-  const gradient = COVER_GRADIENTS[config.cover];
+  const color = COVER_TEXT_COLORS[config.cover] || "#ffffff";
+  const gradient = COVER_GRADIENTS[config.cover] || COVER_GRADIENTS.nebula;
   const light = isLightCover(config.cover);
   const cfs = getCoverFontSizes(config.fontSize || "medium");
 
@@ -349,11 +364,12 @@ const buildEntryByLayout = (entry: JournalEntry, config: BookConfig, S: BookScal
 /* ── Shared document shell ── */
 
 const buildDocShell = (bodyInner: string, fontCSS: string, fontImportUrl: string, S: BookScale, extraCss = ""): string => {
-  const pageCss = S.fixed
+  const pageCss = S.fixed && !S.fluid
     ? `.page { width:${S.pageW}px; height:${S.pageH}px; overflow:hidden; position:relative; page-break-after: always; }`
-    : /* 297mm = exact A5 height. 100vh under-resolves to ~80% of the page in
-         iOS print, leaving a white strip at the bottom of every page. */
-      `.page { width:${S.pageW}; min-height:297mm; position:relative; page-break-after: always; }`;
+    : /* 595px = exactly one A5 page in expo-print's 72dpi model (420x595 pt).
+         100vh resolves to ~80% of the page in this pipeline and 297mm to
+         842px, both paginating to ~1.4 pages per entry (fixed 2026-08-19). */
+      `.page { width:${S.pageW}; min-height:${S.pageH}px; position:relative; page-break-after: always; }`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=${S.fixed ? S.pageW : 420}">
 <link href="${fontImportUrl}" rel="stylesheet">
