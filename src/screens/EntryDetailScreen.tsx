@@ -25,6 +25,14 @@ const MOOD_EMOJI: Record<string, string> = {
 
 const GENERATE_VOICE_URL = "https://soul-journal-seven.vercel.app/api/generate-voice";
 
+/** base64 string -> Uint8Array (for Supabase storage upload) */
+function decodeBase64(b64: string): Uint8Array {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
 interface EntryDetail {
   id: string;
   title: string | null;
@@ -82,7 +90,7 @@ export default function EntryDetailScreen() {
     const { data } = await supabase
       .from("journal_entries")
       .select(
-        "id, title, mood, created_at, enhanced_text, original_transcription, detected_language, playback_language, soul_reflection"
+        "id, title, mood, created_at, enhanced_text, original_transcription, detected_language, playback_language, soul_reflection, audio_url"
       )
       .eq("id", route.params.id)
       .maybeSingle();
@@ -149,6 +157,32 @@ export default function EntryDetailScreen() {
       }
     } catch {}
 
+    // 1b) Durable storage cache (web parity): if the AI voice was already saved
+    // for this entry (any device), download it and play — zero re-synthesis.
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const userId = authUser?.id;
+      if (userId) {
+        const fileName = `${entry.id}-entry.mp3`;
+        const { data: existing } = await supabase.storage
+          .from("journal-audio")
+          .list(`voice-cache/${userId}`, { search: fileName, limit: 1 });
+        if (existing && existing.length > 0) {
+          const { data: signed } = await supabase.storage
+            .from("journal-audio")
+            .createSignedUrl(`voice-cache/${userId}/${fileName}`, 3600);
+          if (signed?.signedUrl) {
+            await FileSystem.makeDirectoryAsync(audioDir, { intermediates: true }).catch(() => {});
+            const dl = await FileSystem.downloadAsync(signed.signedUrl, fileUri);
+            if (dl.status === 200) {
+              await playFromFile(fileUri);
+              return;
+            }
+          }
+        }
+      }
+    } catch {}
+
     setGenerating(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -208,12 +242,54 @@ export default function EntryDetailScreen() {
       await FileSystem.writeAsStringAsync(fileUri, json.audioContent, {
         encoding: FileSystem.EncodingType.Base64,
       });
+      // 3) Persist to Supabase storage (fire-and-forget — playback starts now)
+      // so ANY device replays instantly — same bucket/path the web app uses.
+      persistVoiceToStorage(entry.id, json.audioContent, (entry as any)?.audio_url).catch(() => {});
       await playFromFile(fileUri);
     } catch (e) {
       console.warn("play error", e);
       setGenerating(false);
       Alert.alert("Playback", t("entry.playFailed"));
     }
+  };
+
+  /** Persist a generated AI voice to Supabase storage (web parity: same bucket
+   *  and path the web app uses — voice-cache/<userId>/<entryId>-entry.mp3). */
+  const persistVoiceToStorage = async (entryId: string, base64Audio: string, currentUrl: any) => {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const userId = authUser?.id;
+      if (!userId) return;
+      const storagePath = `voice-cache/${userId}/${entryId}-entry.mp3`;
+      const { error: upErr } = await supabase.storage
+        .from("journal-audio")
+        .upload(storagePath, decodeBase64(base64Audio), {
+          contentType: "audio/mpeg",
+          upsert: true,
+        });
+      // Record the path on the entry — never clobber a raw recording link
+      if (!upErr && (!currentUrl || String(currentUrl).startsWith("voice-cache/"))) {
+        await supabase.from("journal_entries").update({ audio_url: storagePath }).eq("id", entryId);
+      }
+    } catch (e) {
+      console.warn("voice persist failed", e);
+    }
+  };
+
+  /** Remove the durable storage copy when the text changes (web parity). */
+  const removeRemoteVoice = async (entryId: string) => {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const userId = authUser?.id;
+      if (!userId) return;
+      await supabase.storage
+        .from("journal-audio")
+        .remove([`voice-cache/${userId}/${entryId}-entry.mp3`]);
+      const current = (entry as any)?.audio_url;
+      if (current && String(current).startsWith("voice-cache/")) {
+        await supabase.from("journal_entries").update({ audio_url: null }).eq("id", entryId);
+      }
+    } catch {}
   };
 
   const confirmDelete = () => {
@@ -258,11 +334,12 @@ export default function EntryDetailScreen() {
       if (error) throw error;
       setEntry({ ...entry, enhanced_text: next });
       setEditing(false);
-      // Edited text invalidates the cached voice
+      // Edited text invalidates the cached voice (local + durable storage)
       try {
         const dir = `${FileSystem.documentDirectory}voice-cache/`;
         const info = await FileSystem.getInfoAsync(`${dir}voice-${entry.id}.mp3`);
         if (info.exists) await FileSystem.deleteAsync(`${dir}voice-${entry.id}.mp3`);
+        await removeRemoteVoice(entry.id);
       } catch {}
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("✓", t("entry.bodyUpdated"));
@@ -306,11 +383,12 @@ export default function EntryDetailScreen() {
         .eq("id", entry.id);
       if (error) throw error;
       setEntry({ ...entry, enhanced_text: json.enhancedText });
-      // Invalidate cached voice
+      // Invalidate cached voice (local + durable storage)
       try {
         const dir = `${FileSystem.documentDirectory}voice-cache/`;
         const info = await FileSystem.getInfoAsync(`${dir}voice-${entry.id}.mp3`);
         if (info.exists) await FileSystem.deleteAsync(`${dir}voice-${entry.id}.mp3`);
+        await removeRemoteVoice(entry.id);
       } catch {}
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("✨", t("entry.enhanced"));
