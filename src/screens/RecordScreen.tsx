@@ -57,6 +57,10 @@ export default function RecordScreen() {
       const ok = await ensureMicPermission();
       if (!ok) return;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      // iOS resets the AVAudioSession category after the permission flow and
+      // after any playback — re-enable recording mode right before recording
+      // (without this, record() throws RecordingDisabledException).
+      try { await setAudioModeAsync({ allowsRecording: true }); } catch {}
       await recorder.prepareToRecordAsync();
       recorder.record();
       setIsRecording(true);
