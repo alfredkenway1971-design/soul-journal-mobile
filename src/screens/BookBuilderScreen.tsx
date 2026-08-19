@@ -647,6 +647,10 @@ export default function BookBuilderScreen() {
                 display="inline"
                 locale={localeFor(language)}
                 maximumDate={pickerField === "from" ? (endDate ?? undefined) : undefined}
+                /* iOS: force light theme + dark text so labels never render white-on-white (2026-08-19) */
+                themeVariant="light"
+                textColor="#111827"
+                accentColor={colors.primary}
                 onChange={(e, d) => { if (d) setDateField(pickerField, d); }}
               />
               <Pressable style={styles.pickerDone} onPress={() => setPickerField(null)}>
