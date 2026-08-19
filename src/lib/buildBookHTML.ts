@@ -351,10 +351,15 @@ const buildDocShell = (bodyInner: string, fontCSS: string, fontImportUrl: string
 <meta name="viewport" content="width=${S.fixed ? S.pageW : 420}">
 <link href="${fontImportUrl}" rel="stylesheet">
 <style>
+  /* Force light rendering: without this, iOS print uses the device's color
+     scheme — on dark-mode phones the canvas turns black and unset colors
+     invert, producing a black-background PDF (fixed 2026-08-19). */
+  :root { color-scheme: only light; }
+  html { background: #ffffff; }
   @page { size: A5 portrait; margin: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body { font-family: ${fontCSS}; color: #1a1a1a; word-spacing: 0.15em; letter-spacing: 0.01em; }
+  body { background: #ffffff; font-family: ${fontCSS}; color: #1a1a1a; word-spacing: 0.15em; letter-spacing: 0.01em; }
   ${pageCss}
   .cover { display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
   .entry-page { background-color: #ffffff; padding: ${S.px(60)}px ${S.px(48)}px; }
