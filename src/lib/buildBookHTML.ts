@@ -197,13 +197,18 @@ const buildImageGalleryHTML = (photoUrls: string[], photoSize: PhotoSize, isRTL:
 
 const buildSoulReflectionHTML = (reflection: string, fs: number, px: (n: number) => number): string => {
   if (!reflection) return "";
+  // AI reflection tags like [CHALLENGE] render as shouting caps — show them in title case instead.
+  const shown = reflection.replace(/\[([A-Z][A-Z\s]*)\]/g, (_m, inner: string) => {
+    const t = inner.trim().toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+    return `[${t}]`;
+  });
   return `
   <div style="margin-top:${px(28)}px;padding:${px(16)}px ${px(20)}px;border-radius:${px(14)}px;background:linear-gradient(135deg, #f6f2fe, #fef4f9);border:1px solid rgba(139,92,246,0.15);">
     <div style="display:flex;align-items:center;gap:${px(8)}px;margin-bottom:${px(8)}px;">
       <span style="font-size:${px(14)}px;">✨</span>
-      <span style="font-size:${px(fs - 4)}px;font-weight:600;color:#7c3aed;letter-spacing:0.04em;">Message from Your Soul</span>
+      <span style="font-size:${px(fs - 4)}px;font-weight:400;color:#7c3aed;">Message from Your Soul</span>
     </div>
-    <p style="font-size:${px(fs - 1)}px;line-height:1.7;color:#4b5563;font-style:italic;">"${escMultiline(reflection)}"</p>
+    <p style="font-size:${px(fs - 1)}px;line-height:1.7;color:#4b5563;font-style:italic;">"${escMultiline(shown)}"</p>
   </div>`;
 };
 
