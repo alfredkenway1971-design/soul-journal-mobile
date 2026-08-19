@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import {
   View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
+  KeyboardAvoidingView, Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAudioRecorder, setAudioModeAsync, RecordingPresets } from "expo-audio";
@@ -291,7 +292,8 @@ export default function RecordScreen() {
 
   return (
     <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>🎙️ {t("record.title")}</Text>
         <Text style={styles.subtitle}>{t("record.subtitle")}</Text>
 
@@ -397,17 +399,21 @@ export default function RecordScreen() {
           </View>
         )}
 
-        <Pressable style={[styles.saveButton, shadows.soft, saving && { opacity: 0.6 }]} onPress={saveEntry} disabled={saving}>
-          <Text style={styles.saveText}>{saving ? t("record.saving") : `${t("record.save")} ✨`}</Text>
-        </Pressable>
-      </ScrollView>
+        </ScrollView>
+        {/* Save = fixed footer, always visible above the keyboard (2026-08-19) */}
+        <View style={styles.saveFooter}>
+          <Pressable style={[styles.saveButton, shadows.soft, saving && { opacity: 0.6 }]} onPress={saveEntry} disabled={saving}>
+            <Text style={styles.saveText}>{saving ? t("record.saving") : `${t("record.save")} ✨`}</Text>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
     </LinearGradient>
   );
 }
 
 const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   root: { flex: 1 },
-  content: { padding: 20, paddingBottom: 110 },
+  content: { padding: 20, paddingBottom: 24 },
   title: {
     fontSize: 26,
     color: colors.text,
@@ -527,4 +533,11 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
     alignItems: "center",
   },
   saveText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: appFonts.bodyBold },
+  saveFooter: {
+    padding: 16,
+    paddingTop: 10,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderTopWidth: 1,
+    borderTopColor: colors.glassBorder,
+  },
 });

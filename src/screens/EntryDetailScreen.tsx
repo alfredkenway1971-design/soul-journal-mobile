@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, TextInput,
+  KeyboardAvoidingView, Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
@@ -414,7 +415,8 @@ export default function EntryDetailScreen() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Header */}
           <View style={styles.headerRow}>
             <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
@@ -504,9 +506,6 @@ export default function EntryDetailScreen() {
 
             {editing && (
               <View style={styles.actionsRow}>
-                <Pressable style={[styles.actionBtn, styles.actionPrimary]} onPress={saveEdit} disabled={enhancing}>
-                  <Text style={styles.actionPrimaryText}>✓ {t("entry.saveBtn")}</Text>
-                </Pressable>
                 <Pressable style={styles.actionBtn} onPress={() => enhanceBody("natural")} disabled={enhancing}>
                   <Text style={styles.actionBtnText}>
                     {enhancing ? t("record.enhancing") : `✨ ${t("entry.enhanceBtn")}`}
@@ -556,6 +555,15 @@ export default function EntryDetailScreen() {
             );
           })()}
         </ScrollView>
+        {/* Save = fixed footer, always visible above the keyboard while editing (2026-08-19) */}
+        {editing && (
+          <View style={styles.saveFooter}>
+            <Pressable style={[styles.saveButton, shadows.soft, enhancing && { opacity: 0.6 }]} onPress={saveEdit} disabled={enhancing}>
+              <Text style={styles.saveText}>✓ {t("entry.saveBtn")}</Text>
+            </Pressable>
+          </View>
+        )}
+        </KeyboardAvoidingView>
       )}
     </LinearGradient>
   );
@@ -669,9 +677,7 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(29,129,237,0.2)",
   },
-  actionPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },
   actionBtnText: { fontSize: 12, color: colors.primary, fontFamily: appFonts.bodySemiBold },
-  actionPrimaryText: { fontSize: 12, color: colors.white, fontFamily: appFonts.bodyBold },
   actionCancelText: { fontSize: 14, color: colors.textFaint, fontFamily: appFonts.bodyBold },
   originalCard: {
     ...glassCard,
@@ -728,4 +734,18 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
     color: colors.text,
     fontFamily: appFonts.body,
   },
+  saveFooter: {
+    padding: 16,
+    paddingTop: 10,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderTopWidth: 1,
+    borderTopColor: colors.glassBorder,
+  },
+  saveButton: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.input,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  saveText: { color: colors.white, fontSize: 16, fontWeight: "700", fontFamily: appFonts.bodyBold },
 });
