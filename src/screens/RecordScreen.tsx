@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import {
   View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Platform, Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAudioRecorder, setAudioModeAsync, RecordingPresets } from "expo-audio";
@@ -12,6 +12,10 @@ import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { ensureMicPermission } from "@/lib/micPermission";
 import { generateTitle } from "@/lib/aiTitle";
+import {
+  pickPhoto, uploadEntryPhoto, saveEntryMedia, MAX_ENTRY_PHOTOS,
+  type PickedPhoto,
+} from "@/lib/entryPhotos";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore, useT } from "@/store/settingsStore";
 
@@ -46,6 +50,7 @@ export default function RecordScreen() {
   const [isDream, setIsDream] = useState(false);
   const [dreamReflection, setDreamReflection] = useState<string | null>(null);
   const [dreamLoading, setDreamLoading] = useState(false);
+  const [photos, setPhotos] = useState<PickedPhoto[]>([]);
 
   useEffect(() => {
     // iOS REQUIRES playsInSilentMode:true together with allowsRecording:true —
@@ -115,6 +120,28 @@ export default function RecordScreen() {
     }
   };
 
+  /* ── Photos (web parity: journal-photos bucket + entry_media rows) ── */
+
+  const addPhoto = async (source: "camera" | "library") => {
+    if (photos.length >= MAX_ENTRY_PHOTOS) {
+      Alert.alert(t("record.photosTitle"), t("record.photoLimit"));
+      return;
+    }
+    const res = await pickPhoto(source);
+    if (res.status === "denied") {
+      Alert.alert(t("common.error"), t("record.photosDenied"));
+      return;
+    }
+    if (res.status === "ok") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setPhotos((prev) => [...prev, res.photo].slice(0, MAX_ENTRY_PHOTOS));
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const saveEntry = async () => {
     const content = text.trim();
     if (!content) {
@@ -146,9 +173,22 @@ export default function RecordScreen() {
       }).select("id");
       if (error) throw error;
       const entryId = inserted?.[0]?.id as string | undefined;
+      // Upload attached photos and link them (web parity: entry_media rows).
+      // Per-photo try/catch: a photo failure never loses the entry itself.
+      if (entryId && photos.length > 0) {
+        for (const photo of photos) {
+          try {
+            const storagePath = await uploadEntryPhoto(photo, user.id);
+            await saveEntryMedia(entryId, storagePath);
+          } catch (e) {
+            console.warn("photo upload failed", e);
+          }
+        }
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setText("");
       setMood("fine");
+      setPhotos([]);
       if (isDream) {
         setIsDream(false);
         generateDreamReflection(content);
@@ -328,6 +368,36 @@ export default function RecordScreen() {
           textAlignVertical="top"
         />
 
+        {/* Photos (web parity: attach pictures to the entry → they appear in the Soul Book PDF) */}
+        <View style={[styles.photosCard, shadows.soft]}>
+          <View style={styles.photosHeader}>
+            <Text style={styles.photosTitle}>🖼️ {t("record.photosTitle")}</Text>
+            {photos.length > 0 && (
+              <Text style={styles.photosCount}>{photos.length}/{MAX_ENTRY_PHOTOS}</Text>
+            )}
+          </View>
+          <View style={styles.photoButtons}>
+            <Pressable style={styles.photoBtn} onPress={() => addPhoto("camera")}>
+              <Text style={styles.photoBtnText}>📷 {t("record.takePhoto")}</Text>
+            </Pressable>
+            <Pressable style={styles.photoBtn} onPress={() => addPhoto("library")}>
+              <Text style={styles.photoBtnText}>🖼️ {t("record.fromLibrary")}</Text>
+            </Pressable>
+          </View>
+          {photos.length > 0 && (
+            <View style={styles.photoRow}>
+              {photos.map((p, i) => (
+                <View key={`${p.uri}-${i}`} style={styles.photoWrap}>
+                  <Image source={{ uri: p.uri }} style={styles.photoThumb} />
+                  <Pressable style={styles.photoRemove} onPress={() => removePhoto(i)} hitSlop={8}>
+                    <Text style={styles.photoRemoveText}>✕</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
         {/* AI writing ideas (Smart Prompts) */}
         {(prompts.length > 0 || promptsLoading) && (
           <View style={[styles.promptsCard, shadows.soft]}>
@@ -461,6 +531,55 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
     fontFamily: appFonts.body,
   },
   sectionLabel: { fontSize: 14, color: colors.text, marginBottom: 10, fontFamily: appFonts.bodySemiBold },
+  photosCard: {
+    ...glassCard,
+    padding: 16,
+    marginBottom: 20,
+  },
+  photosHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  photosTitle: { fontSize: 14, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  photosCount: { fontSize: 12, color: colors.textMuted, fontFamily: appFonts.body },
+  photoButtons: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
+  photoBtn: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.input,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "rgba(29,129,237,0.2)",
+    flexGrow: 1,
+    alignItems: "center",
+  },
+  photoBtnText: { fontSize: 13, color: colors.primary, fontFamily: appFonts.bodySemiBold },
+  photoRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
+  photoWrap: { position: "relative" },
+  photoThumb: {
+    width: 68,
+    height: 68,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    backgroundColor: colors.cardGlassStrong,
+  },
+  photoRemove: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 999,
+    backgroundColor: "#ef4444",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: colors.white,
+  },
+  photoRemoveText: { color: colors.white, fontSize: 11, fontWeight: "700" },
   promptsCard: {
     ...glassCard,
     padding: 16,

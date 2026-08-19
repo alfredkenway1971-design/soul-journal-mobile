@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import {
   View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, TextInput,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Platform, Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
@@ -11,6 +11,10 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
+import {
+  pickPhoto, uploadEntryPhoto, saveEntryMedia, deleteEntryPhoto,
+  loadEntryPhotos, MAX_ENTRY_PHOTOS,
+} from "@/lib/entryPhotos";
 import { useAuthStore } from "@/store/authStore";
 import { useT, useSettingsStore, localeFor } from "@/store/settingsStore";
 
@@ -80,6 +84,9 @@ export default function EntryDetailScreen() {
   const [editText, setEditText] = useState("");
   const [enhancing, setEnhancing] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [photoStoragePaths, setPhotoStoragePaths] = useState<string[]>([]);
+  const [addingPhoto, setAddingPhoto] = useState(false);
   const playerRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
 
   useEffect(() => {
@@ -96,8 +103,61 @@ export default function EntryDetailScreen() {
       .eq("id", route.params.id)
       .maybeSingle();
     setEntry(data ?? null);
+    // Photos (web parity: entry_media + journal-photos signed URLs)
+    const refs = await loadEntryPhotos(route.params.id);
+    setPhotoUrls(refs.map((r) => r.url));
+    setPhotoStoragePaths(refs.map((r) => r.storagePath));
     setLoading(false);
   }, [user, route.params.id]);
+
+  /* ── Photos: add / remove (web parity: journal-photos bucket + entry_media) ── */
+
+  const addPhotoToEntry = async (source: "camera" | "library") => {
+    if (!entry) return;
+    if (photoUrls.length >= MAX_ENTRY_PHOTOS) {
+      Alert.alert(t("entry.photosTitle"), t("record.photoLimit"));
+      return;
+    }
+    const res = await pickPhoto(source);
+    if (res.status === "denied") {
+      Alert.alert(t("common.error"), t("record.photosDenied"));
+      return;
+    }
+    if (res.status !== "ok") return;
+    setAddingPhoto(true);
+    try {
+      const storagePath = await uploadEntryPhoto(res.photo, user!.id);
+      await saveEntryMedia(entry.id, storagePath);
+      const refs = await loadEntryPhotos(entry.id);
+      setPhotoUrls(refs.map((r) => r.url));
+      setPhotoStoragePaths(refs.map((r) => r.storagePath));
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {
+      console.warn("add photo failed", e);
+      Alert.alert(t("common.error"), t("entry.photoFailed"));
+    } finally {
+      setAddingPhoto(false);
+    }
+  };
+
+  const removePhotoFromEntry = (index: number) => {
+    if (!entry) return;
+    const path = photoStoragePaths[index];
+    if (!path) return;
+    Alert.alert(t("entry.photosTitle"), t("record.removePhoto"), [
+      { text: t("profile.cancel"), style: "cancel" },
+      {
+        text: t("record.removePhoto"),
+        style: "destructive",
+        onPress: async () => {
+          await deleteEntryPhoto(path);
+          const refs = await loadEntryPhotos(entry.id);
+          setPhotoUrls(refs.map((r) => r.url));
+          setPhotoStoragePaths(refs.map((r) => r.storagePath));
+        },
+      },
+    ]);
+  };
 
   useEffect(() => {
     load();
@@ -439,6 +499,46 @@ export default function EntryDetailScreen() {
             </Text>
           </View>
 
+          {/* Photos (web parity: entry_media + journal-photos bucket) */}
+          <View style={[styles.photosCard, shadows.soft]}>
+            <View style={styles.photosHeader}>
+              <Text style={styles.photosTitle}>🖼️ {t("entry.photosTitle")}</Text>
+              {photoUrls.length > 0 && (
+                <Text style={styles.photosCount}>{photoUrls.length}/{MAX_ENTRY_PHOTOS}</Text>
+              )}
+            </View>
+            {photoUrls.length > 0 && (
+              <View style={styles.photoRow}>
+                {photoUrls.map((url, i) => (
+                  <View key={`${url}-${i}`} style={styles.photoWrap}>
+                    <Image source={{ uri: url }} style={styles.photoThumb} />
+                    <Pressable style={styles.photoRemove} onPress={() => removePhotoFromEntry(i)} hitSlop={8}>
+                      <Text style={styles.photoRemoveText}>✕</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            )}
+            <View style={styles.photoButtons}>
+              <Pressable
+                style={[styles.photoBtn, addingPhoto && { opacity: 0.6 }]}
+                onPress={() => addPhotoToEntry("camera")}
+                disabled={addingPhoto}
+              >
+                <Text style={styles.photoBtnText}>📷 {t("record.takePhoto")}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.photoBtn, addingPhoto && { opacity: 0.6 }]}
+                onPress={() => addPhotoToEntry("library")}
+                disabled={addingPhoto}
+              >
+                <Text style={styles.photoBtnText}>
+                  {addingPhoto ? t("record.saving") : `🖼️ ${t("entry.addPhoto")}`}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
           {/* Play card */}
           <Pressable
             style={[styles.playCard, shadows.card, (generating || playing) && { borderColor: colors.primary }]}
@@ -617,6 +717,55 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   },
   metaDate: { fontSize: 13, color: colors.textMuted, fontFamily: appFonts.bodyMedium, flex: 1 },
   metaMood: { fontSize: 13, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  photosCard: {
+    ...glassCard,
+    padding: 16,
+    marginBottom: 14,
+  },
+  photosHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  photosTitle: { fontSize: 14, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  photosCount: { fontSize: 12, color: colors.textMuted, fontFamily: appFonts.body },
+  photoRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 12 },
+  photoWrap: { position: "relative" },
+  photoThumb: {
+    width: 68,
+    height: 68,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    backgroundColor: colors.cardGlassStrong,
+  },
+  photoRemove: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 999,
+    backgroundColor: "#ef4444",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: colors.white,
+  },
+  photoRemoveText: { color: colors.white, fontSize: 11, fontWeight: "700" },
+  photoButtons: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
+  photoBtn: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.input,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "rgba(29,129,237,0.2)",
+    flexGrow: 1,
+    alignItems: "center",
+  },
+  photoBtnText: { fontSize: 13, color: colors.primary, fontFamily: appFonts.bodySemiBold },
   playCard: {
     ...glassCard,
     flexDirection: "row",
