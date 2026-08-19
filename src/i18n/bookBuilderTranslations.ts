@@ -10,6 +10,12 @@ type KeyMap = Record<string, string>;
 
 export const bookBuilderTranslations: Partial<Record<AppLanguage, KeyMap>> = {
   en: {
+    "export.download": "Download all your entries",
+    "export.soulBook": "Soul Book Builder (PDF)",
+    "export.soulBookDesc": "Customizable cover, fonts & layout for printing",
+    "export.exportYourEntries": "Export Your Entries",
+    "export.exportDescription": "Download all your journal entries as a file to keep a backup or share with others.",
+    "export.exportInfo": "Your exported file will include all journal entries with their dates, moods, and content.",
     "bookBuilder.title": "Soul Book Builder",
     "bookBuilder.step1": "Date Range",
     "bookBuilder.step2": "Cover & Title",
@@ -108,6 +114,12 @@ export const bookBuilderTranslations: Partial<Record<AppLanguage, KeyMap>> = {
   },
 
   fr: {
+    "export.download": "Téléchargez toutes vos entrées",
+    "export.soulBook": "Constructeur de livre d'âme (PDF)",
+    "export.soulBookDesc": "Couverture, polices et mise en page personnalisables",
+    "export.exportYourEntries": "Exporter vos entrées",
+    "export.exportDescription": "Téléchargez toutes vos entrées pour une sauvegarde ou un partage.",
+    "export.exportInfo": "Votre fichier exporté comprendra toutes les entrées avec dates, humeurs et contenu.",
     "bookBuilder.title": "Créateur de livre d'âme",
     "bookBuilder.step1": "Période",
     "bookBuilder.step2": "Couverture et titre",
@@ -206,6 +218,12 @@ export const bookBuilderTranslations: Partial<Record<AppLanguage, KeyMap>> = {
   },
 
   es: {
+    "export.download": "Descarga todas tus entradas",
+    "export.soulBook": "Constructor de libro del alma (PDF)",
+    "export.soulBookDesc": "Portada, fuentes y diseño personalizables",
+    "export.exportYourEntries": "Exportar tus entradas",
+    "export.exportDescription": "Descarga todas tus entradas como archivo de respaldo o para compartir.",
+    "export.exportInfo": "Tu archivo exportado incluirá todas las entradas con fechas, ánimos y contenido.",
     "bookBuilder.title": "Creador de libro del alma",
     "bookBuilder.step1": "Rango de fechas",
     "bookBuilder.step2": "Portada y título",
@@ -304,6 +322,12 @@ export const bookBuilderTranslations: Partial<Record<AppLanguage, KeyMap>> = {
   },
 
   ar: {
+    "export.download": "تنزيل جميع إدخالاتك",
+    "export.soulBook": "منشئ كتاب الروح (PDF)",
+    "export.soulBookDesc": "غلاف وخطوط وتخطيط قابلة للتخصيص",
+    "export.exportYourEntries": "تصدير إدخالاتك",
+    "export.exportDescription": "حمّل جميع إدخالاتك كنسخة احتياطية أو للمشاركة.",
+    "export.exportInfo": "سيشمل ملفك المصدّر جميع الإدخالات مع التواريخ والمزاج والمحتوى.",
     "bookBuilder.title": "منشئ كتاب الروح",
     "bookBuilder.step1": "نطاق التاريخ",
     "bookBuilder.step2": "الغلاف والعنوان",
@@ -402,6 +426,12 @@ export const bookBuilderTranslations: Partial<Record<AppLanguage, KeyMap>> = {
   },
 
   zh: {
+    "export.download": "下载所有条目",
+    "export.soulBook": "灵魂之书构建器 (PDF)",
+    "export.soulBookDesc": "可定制封面、字体和布局",
+    "export.exportYourEntries": "导出您的条目",
+    "export.exportDescription": "下载所有日记条目作为备份或分享。",
+    "export.exportInfo": "您的导出文件将包含所有条目及其日期、情绪和内容。",
     "bookBuilder.title": "灵魂之书生成器",
     "bookBuilder.step1": "日期范围",
     "bookBuilder.step2": "封面与标题",
@@ -500,6 +530,12 @@ export const bookBuilderTranslations: Partial<Record<AppLanguage, KeyMap>> = {
   },
 
   ja: {
+    "export.download": "すべてのエントリーをダウンロード",
+    "export.soulBook": "ソウルブックビルダー (PDF)",
+    "export.soulBookDesc": "カスタマイズ可能なカバー、フォント、レイアウト",
+    "export.exportYourEntries": "エントリーをエクスポート",
+    "export.exportDescription": "すべての日記エントリーをバックアップまたは共有用にダウンロード。",
+    "export.exportInfo": "エクスポートファイルにはすべてのエントリーの日付、気分、内容が含まれます。",
     "bookBuilder.title": "ソウルブック作成",
     "bookBuilder.step1": "日付範囲",
     "bookBuilder.step2": "カバーとタイトル",
@@ -598,6 +634,12 @@ export const bookBuilderTranslations: Partial<Record<AppLanguage, KeyMap>> = {
   },
 
   sw: {
+    "export.download": "Pakua maingizo yako yote",
+    "export.soulBook": "Mjenzi wa Kitabu cha Roho (PDF)",
+    "export.soulBookDesc": "Jalada, fonti na mpangilio unaoweza kubinafsishwa",
+    "export.exportYourEntries": "Hamisha maingizo yako",
+    "export.exportDescription": "Pakua maingizo yako yote kama nakala rudufu au kushiriki.",
+    "export.exportInfo": "Faili yako itajumuisha maingizo yote pamoja na tarehe, hali na maudhui.",
     "bookBuilder.title": "Kijenge cha kitabu cha roho",
     "bookBuilder.step1": "Muda wa tarehe",
     "bookBuilder.step2": "Jalada na kichwa",
@@ -696,6 +738,12 @@ export const bookBuilderTranslations: Partial<Record<AppLanguage, KeyMap>> = {
   },
 
   de: {
+    "export.download": "Alle Einträge herunterladen",
+    "export.soulBook": "Seelenbuch-Builder (PDF)",
+    "export.soulBookDesc": "Anpassbares Cover, Schriften und Layout",
+    "export.exportYourEntries": "Deine Einträge exportieren",
+    "export.exportDescription": "Lade alle Tagebucheinträge als Backup oder zum Teilen herunter.",
+    "export.exportInfo": "Deine Exportdatei enthält alle Einträge mit Datum, Stimmung und Inhalt.",
     "bookBuilder.title": "Seelenbuch-Ersteller",
     "bookBuilder.step1": "Datumsbereich",
     "bookBuilder.step2": "Cover & Titel",

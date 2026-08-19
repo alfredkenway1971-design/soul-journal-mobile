@@ -448,6 +448,10 @@ export default function BookBuilderScreen() {
                             showAvatar={showAvatar}
                             width={gridCardW}
                           />
+                          {/* Selected checkmark badge (web parity) */}
+                          <View style={[styles.coverCheck, active && styles.coverCheckOn]}>
+                            {active && <Text style={styles.coverCheckMark}>✓</Text>}
+                          </View>
                         </View>
                         <Text style={[styles.coverName, active && { color: colors.primary }]}>{t(c.nameKey)}</Text>
                         <Text style={styles.coverDesc}>{t(c.descKey)}</Text>
@@ -730,6 +734,13 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   coverCell: { width: "31%", marginBottom: 4 },
   coverCellCard: { borderRadius: radius.card, padding: 5, backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 2, borderColor: "transparent" },
   coverCellActive: { borderColor: colors.primary },
+  coverCheck: {
+    position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: 10,
+    backgroundColor: "#ffffff", borderWidth: 1.5, borderColor: "#d6d3d1",
+    alignItems: "center", justifyContent: "center",
+  },
+  coverCheckOn: { backgroundColor: "#059669", borderColor: "#059669" }, // emerald (Amer's design rule)
+  coverCheckMark: { color: "#ffffff", fontSize: 12, fontWeight: "800", lineHeight: 14 },
   coverName: { fontSize: 13, color: colors.text, textAlign: "center", marginTop: 6, fontFamily: appFonts.bodySemiBold },
   coverDesc: { fontSize: 10, color: colors.textFaint, textAlign: "center", marginTop: 1, fontFamily: appFonts.body, lineHeight: 13 },
   switchRow: { ...glassCard, borderRadius: radius.card, padding: 14, flexDirection: "row", alignItems: "center", gap: 10, marginTop: 16 },

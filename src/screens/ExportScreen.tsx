@@ -1,10 +1,13 @@
 import { useState, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
@@ -31,7 +34,7 @@ const fmtDate = (iso: string) => {
 };
 
 export default function ExportScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const appFonts = useAppFonts();
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
@@ -100,29 +103,63 @@ export default function ExportScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <Pressable style={styles.iconBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.iconBtnText}>←</Text>
+            <Ionicons name="arrow-back" size={20} color={colors.primary} />
           </Pressable>
-          <Text style={styles.headerTitle}>{t("export.pageTitle")}</Text>
+          <View style={{ flex: 1, alignItems: "center" }}>
+            <Text style={styles.headerTitle}>{t("export.title")}</Text>
+            <Text style={styles.headerSub}>{t("export.download")}</Text>
+          </View>
           <View style={{ width: 40 }} />
         </View>
 
-        <View style={[styles.card, shadows.card]}>
-          <Text style={styles.cardEmoji}>📖</Text>
-          <Text style={styles.cardTitle}>{t("export.title")}</Text>
-          <Text style={styles.cardDesc}>
-            {t("export.desc")}
-          </Text>
-          <Pressable style={[styles.exportBtn, shadows.soft, exporting && { opacity: 0.6 }]} onPress={exportPdf} disabled={exporting}>
+        {/* Hero (web ExportPage parity) */}
+        <View style={styles.hero}>
+          <View style={styles.heroIcon}>
+            <Ionicons name="download-outline" size={34} color={colors.primary} />
+          </View>
+          <Text style={styles.heroTitle}>{t("export.exportYourEntries")}</Text>
+          <Text style={styles.heroDesc}>{t("export.exportDescription")}</Text>
+        </View>
+
+        {/* Soul Book Builder (PDF) — the web's main export card */}
+        <Pressable
+          style={[styles.soulCard, shadows.soft]}
+          onPress={() => navigation.navigate("BookBuilder")}
+        >
+          <View style={styles.soulIcon}>
+            <Ionicons name="book-outline" size={26} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.soulTitle}>{t("export.soulBook")}</Text>
+            <Text style={styles.soulDesc}>{t("export.soulBookDesc")}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textFaint} />
+        </Pressable>
+
+        {/* Quick PDF (existing export preserved) */}
+        <View style={[styles.quickCard, shadows.soft]}>
+          <View style={styles.quickIcon}>
+            <Ionicons name="document-text-outline" size={22} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.quickTitle}>{t("export.createPdf")}</Text>
+            <Text style={styles.quickDesc}>{t("export.desc")}</Text>
+          </View>
+          <Pressable
+            style={[styles.quickBtn, exporting && { opacity: 0.6 }]}
+            onPress={exportPdf}
+            disabled={exporting}
+          >
             {exporting ? (
-              <ActivityIndicator color={colors.white} />
+              <ActivityIndicator size="small" color={colors.white} />
             ) : (
-              <Text style={styles.exportBtnText}>{t("export.createPdf")}</Text>
+              <Text style={styles.quickBtnText}>PDF</Text>
             )}
           </Pressable>
         </View>
 
         <Text style={styles.footnote}>
-          {t("export.limit")}
+          {t("export.exportInfo")}
         </Text>
       </ScrollView>
     </LinearGradient>
@@ -143,30 +180,64 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  iconBtnText: { fontSize: 20, color: colors.primary, fontFamily: appFonts.bodyBold },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
-  card: {
-    ...glassCard,
-    padding: 24,
+  headerTitle: { fontSize: 18, color: colors.text, fontFamily: appFonts.displayBold },
+  headerSub: { fontSize: 12, color: colors.textMuted, marginTop: 1, fontFamily: appFonts.body },
+  hero: { alignItems: "center", paddingVertical: 14 },
+  heroIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 26,
+    backgroundColor: "rgba(29,129,237,0.10)",
     alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
   },
-  cardEmoji: { fontSize: 40, marginBottom: 10 },
-  cardTitle: { fontSize: 17, color: colors.text, fontFamily: appFonts.displayBold, textAlign: "center" },
-  cardDesc: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: "center",
-    marginTop: 8,
-    lineHeight: 20,
-    fontFamily: appFonts.body,
-  },
-  exportBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.input,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
+  heroTitle: { fontSize: 19, color: colors.text, fontFamily: appFonts.displayBold },
+  heroDesc: { fontSize: 13, color: colors.textMuted, textAlign: "center", marginTop: 6, lineHeight: 19, fontFamily: appFonts.body, paddingHorizontal: 10 },
+  soulCard: {
+    ...glassCard,
+    borderRadius: radius.card,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
     marginTop: 18,
   },
-  exportBtnText: { color: colors.white, fontSize: 15, fontWeight: "700", fontFamily: appFonts.bodyBold },
-  footnote: { fontSize: 11, color: colors.textFaint, textAlign: "center", marginTop: 14, fontFamily: appFonts.body },
+  soulIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: "rgba(29,129,237,0.10)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  soulTitle: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  soulDesc: { fontSize: 12, color: colors.textMuted, marginTop: 3, fontFamily: appFonts.body, lineHeight: 16 },
+  quickCard: {
+    ...glassCard,
+    borderRadius: radius.card,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 12,
+  },
+  quickIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: "rgba(29,129,237,0.10)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quickTitle: { fontSize: 14, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  quickDesc: { fontSize: 11.5, color: colors.textMuted, marginTop: 2, fontFamily: appFonts.body, lineHeight: 15 },
+  quickBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.input,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+  },
+  quickBtnText: { color: colors.white, fontSize: 12, fontWeight: "700", fontFamily: appFonts.bodyBold },
+  footnote: { fontSize: 11.5, color: colors.textFaint, textAlign: "center", marginTop: 22, fontFamily: appFonts.body, lineHeight: 16 },
 });
