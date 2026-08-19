@@ -10,6 +10,7 @@ import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import { ensureMicPermission } from "@/lib/micPermission";
+import { generateTitle } from "@/lib/aiTitle";
 import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore, useT } from "@/store/settingsStore";
 
@@ -123,7 +124,13 @@ export default function RecordScreen() {
     setSaving(true);
     try {
       const words = content.split(/\s+/);
-      const title = words.slice(0, 6).join(" ").slice(0, 60) + (words.length > 6 ? "…" : "");
+      const fallbackTitle = words.slice(0, 6).join(" ").slice(0, 60) + (words.length > 6 ? "…" : "");
+      // Web parity: AI-generated title from the entry summary (fallback = first words)
+      let title = fallbackTitle;
+      try {
+        const aiTitle = await generateTitle(content, detectedLang ?? language);
+        if (aiTitle) title = aiTitle;
+      } catch {}
       const moodObj = MOODS.find((m) => m.key === mood)!;
       const { data: inserted, error } = await supabase.from("journal_entries").insert({
         user_id: user.id,
