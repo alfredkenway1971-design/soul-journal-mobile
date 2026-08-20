@@ -369,6 +369,7 @@ export default function BookBuilderScreen() {
           <UpgradePrompt
             title={t("book.premiumTitle")}
             description={t("book.premiumDesc")}
+            onPress={() => navigation.navigate("Pricing")}
           />
         </ScrollView>
       ) : (

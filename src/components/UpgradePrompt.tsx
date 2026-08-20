@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useMemo } from "react";
 import { colors, radius, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
@@ -7,10 +7,12 @@ import { useT } from "@/store/settingsStore";
 interface Props {
   title: string;
   description: string;
+  /** Called when the user taps the CTA (e.g. navigate to Pricing). */
+  onPress?: () => void;
 }
 
 /** Premium locked card — shown for non-premium users on premium features. */
-export default function UpgradePrompt({ title, description }: Props) {
+export default function UpgradePrompt({ title, description, onPress }: Props) {
   const appFonts = useAppFonts();
   const t = useT();
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
@@ -24,9 +26,12 @@ export default function UpgradePrompt({ title, description }: Props) {
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.description}>{description}</Text>
-      <View style={styles.cta}>
+      <Pressable
+        style={({ pressed }) => [styles.cta, pressed && { opacity: 0.85 }]}
+        onPress={onPress}
+      >
         <Text style={styles.ctaText}>{t("upgrade.cta")}</Text>
-      </View>
+      </Pressable>
     </View>
   );
 }

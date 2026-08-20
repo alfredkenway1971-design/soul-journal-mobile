@@ -5,6 +5,8 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
@@ -31,7 +33,7 @@ const monthLabel = (d: Date, lang: string) =>
   });
 
 export default function SoulMirrorScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const appFonts = useAppFonts();
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
@@ -222,6 +224,7 @@ export default function SoulMirrorScreen() {
           <UpgradePrompt
             title={t("soulMirror.premiumTitle")}
             description={t("soulMirror.premiumDesc")}
+            onPress={() => navigation.navigate("Pricing")}
           />
         ) : loading ? (
           <View style={styles.loadingBox}>

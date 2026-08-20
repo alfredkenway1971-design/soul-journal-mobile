@@ -10,6 +10,8 @@ import { useAudioRecorder, setAudioModeAsync, createAudioPlayer, RecordingPreset
 import * as Haptics from "expo-haptics";
 import * as FileSystem from "expo-file-system/legacy";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
 import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
@@ -30,7 +32,7 @@ interface VoiceProfile {
 }
 
 export default function VoiceScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const appFonts = useAppFonts();
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const user = useAuthStore((s) => s.user);
@@ -376,6 +378,7 @@ export default function VoiceScreen() {
           <UpgradePrompt
             title={t("voice.premiumTitle")}
             description={t("voice.premiumDesc")}
+            onPress={() => navigation.navigate("Pricing")}
           />
         ) : loading ? (
           <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
