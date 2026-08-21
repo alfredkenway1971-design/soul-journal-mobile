@@ -108,13 +108,13 @@ export default function AdminScreen() {
     );
   }, [users, search]);
 
-  // Revenue metrics (same derivation as web: monthly $5.99/mo, annual $49.99/yr)
+  // Revenue metrics (same derivation as web: monthly $12.99/mo, annual $99.99/yr)
   const active = users.filter((u) => u.subscription?.status === "active");
   const monthly = active.filter((u) => u.subscription?.plan_type === "monthly");
   const annual = active.filter((u) => u.subscription?.plan_type === "annual");
   const grants = users.filter((u) => u.subscription?.is_manual_grant);
-  const monthlyRevenue = monthly.length * 599;
-  const annualShare = Math.round((annual.length * 4999) / 12);
+  const monthlyRevenue = monthly.length * 1299;
+  const annualShare = Math.round((annual.length * 9999) / 12);
   const totalMonthly = monthlyRevenue + annualShare;
   const fmtUSD = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 
