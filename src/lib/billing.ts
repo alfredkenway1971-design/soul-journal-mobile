@@ -3,10 +3,13 @@ import { useSubscriptionStore } from "@/store/subscriptionStore";
 
 /**
  * Play Billing IAP — Soul Journal subscriptions.
- * Product IDs must match the Google Play Console (subscriptions created there:
- * soul_journal_monthly_999 = $9.99/mo, soul_journal_yearly_9599 = $95.99/yr).
- * Web keeps Stripe; mobile uses Play Billing. Both reconcile through the
- * check-subscription edge fn (Phase 3 receipt-verification backend work).
+ * Product IDs must match the store consoles (SAME subscription group so users
+ * can switch monthly ↔ yearly):
+ *   souljournal_premium_monthly = $12.99/mo
+ *   souljournal_premium_yearly  = $99.99/yr (Save ~36%)
+ * Set these prices in App Store Connect + Google Play Console (v5.0).
+ * Web keeps Stripe; mobile uses store billing (RevenueCat recommended —
+ * see STORE-SETUP.md). Both reconcile through the check-subscription edge fn.
  *
  * ⚠️ CRITICAL: expo-in-app-purchases' native module is NOT present in Expo Go
  * (it exists only in dev/production builds). Static import crashes Expo Go at
@@ -14,8 +17,8 @@ import { useSubscriptionStore } from "@/store/subscriptionStore";
  * LAZILY via require() inside functions — never at module top-level.
  */
 export const PRODUCT_IDS = {
-  monthly: "soul_journal_monthly_999", // $9.99/mo
-  yearly: "soul_journal_yearly_9599", // $95.99/yr (Save 20%)
+  monthly: "souljournal_premium_monthly", // $12.99/mo (v5.0 — set in store consoles)
+  yearly: "souljournal_premium_yearly", // $99.99/yr (v5.0 — Save ~36%)
 } as const;
 
 type IAPModule = typeof import("expo-in-app-purchases");

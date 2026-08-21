@@ -13,10 +13,11 @@ import { supabase } from "@/lib/supabase";
 import { ensureMicPermission } from "@/lib/micPermission";
 import { generateTitle } from "@/lib/aiTitle";
 import {
-  pickPhoto, uploadEntryPhoto, saveEntryMedia, MAX_ENTRY_PHOTOS,
+  pickPhoto, uploadEntryPhoto, saveEntryMedia, getEntryPhotoLimit,
   type PickedPhoto,
 } from "@/lib/entryPhotos";
 import { useAuthStore } from "@/store/authStore";
+import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { useSettingsStore, useT } from "@/store/settingsStore";
 
 const MOODS = [
@@ -31,6 +32,7 @@ const PROMPTS_URL = "https://soul-journal-seven.vercel.app/api/journaling-prompt
 const DREAM_URL = "https://soul-journal-seven.vercel.app/api/dream-reflection";
 
 export default function RecordScreen() {
+  const isPremium = useSubscriptionStore((s) => s.isPremium);
   const user = useAuthStore((s) => s.user);
   const appFonts = useAppFonts();
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
@@ -123,7 +125,8 @@ export default function RecordScreen() {
   /* ── Photos (web parity: journal-photos bucket + entry_media rows) ── */
 
   const addPhoto = async (source: "camera" | "library") => {
-    if (photos.length >= MAX_ENTRY_PHOTOS) {
+    const photoLimit = getEntryPhotoLimit(isPremium);
+    if (photos.length >= photoLimit) {
       Alert.alert(t("record.photosTitle"), t("record.photoLimit"));
       return;
     }
@@ -134,7 +137,7 @@ export default function RecordScreen() {
     }
     if (res.status === "ok") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setPhotos((prev) => [...prev, res.photo].slice(0, MAX_ENTRY_PHOTOS));
+      setPhotos((prev) => [...prev, res.photo].slice(0, photoLimit));
     }
   };
 
@@ -373,7 +376,7 @@ export default function RecordScreen() {
           <View style={styles.photosHeader}>
             <Text style={styles.photosTitle}>🖼️ {t("record.photosTitle")}</Text>
             {photos.length > 0 && (
-              <Text style={styles.photosCount}>{photos.length}/{MAX_ENTRY_PHOTOS}</Text>
+              <Text style={styles.photosCount}>{photos.length}/{getEntryPhotoLimit(isPremium)}</Text>
             )}
           </View>
           <View style={styles.photoButtons}>

@@ -13,10 +13,12 @@ import { useAppFonts, type AppFonts } from "@/hooks/useAppFonts";
 import { supabase } from "@/lib/supabase";
 import {
   pickPhoto, uploadEntryPhoto, saveEntryMedia, deleteEntryPhoto,
-  loadEntryPhotos, MAX_ENTRY_PHOTOS,
+  loadEntryPhotos, getEntryPhotoLimit,
 } from "@/lib/entryPhotos";
 import { useAuthStore } from "@/store/authStore";
+import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { useT, useSettingsStore, localeFor } from "@/store/settingsStore";
+import { getReplaysUsed, incrementReplaysUsed } from "@/lib/usageQuota";
 
 const ENHANCE_URL = "https://soul-journal-seven.vercel.app/api/enhance-text";
 
@@ -70,6 +72,8 @@ const fmtDate = (iso: string) => {
 };
 
 export default function EntryDetailScreen() {
+  const isPremium = useSubscriptionStore((s) => s.isPremium);
+  const voiceCredits = useSubscriptionStore((s) => s.voiceCredits);
   const route = useRoute<EntryDetailRoute>();
   const appFonts = useAppFonts();
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
@@ -114,7 +118,7 @@ export default function EntryDetailScreen() {
 
   const addPhotoToEntry = async (source: "camera" | "library") => {
     if (!entry) return;
-    if (photoUrls.length >= MAX_ENTRY_PHOTOS) {
+    if (photoUrls.length >= getEntryPhotoLimit(isPremium)) {
       Alert.alert(t("entry.photosTitle"), t("record.photoLimit"));
       return;
     }
@@ -190,6 +194,21 @@ export default function EntryDetailScreen() {
     const text = entry.enhanced_text || entry.original_transcription || "";
     if (!text.trim()) return;
 
+    // v5: voice replay is Premium-only (20/mo + purchased credits). Gate BEFORE
+    // any cached play or synthesis so free users never burn Fish Audio calls.
+    if (!isPremium) {
+      Alert.alert(t("entry.voicePremiumRequired"), t("entry.voicePremiumRequiredDesc"), [
+        { text: t("common.cancel"), style: "cancel" },
+        { text: t("pricing.unlockAll"), onPress: () => navigation.navigate("Pricing" as never) },
+      ]);
+      return;
+    }
+    const usedReplays = await getReplaysUsed();
+    if (usedReplays >= 20 + voiceCredits) {
+      Alert.alert(t("entry.replaysLimitTitle"), t("entry.replaysLimitDesc"));
+      return;
+    }
+
     // Cached audio dir — repeat plays are instant, no re-synthesis
     const audioDir = `${FileSystem.documentDirectory}voice-cache/`;
     const fileUri = `${audioDir}voice-${entry.id}.mp3`;
@@ -199,6 +218,8 @@ export default function EntryDetailScreen() {
       playerRef.current = player;
       setGenerating(false);
       setPlaying(true);
+      // v5: count every replay (cached or freshly synthesized) against the 20/mo cap
+      incrementReplaysUsed().catch(() => {});
       player.addListener("playbackStatusUpdate", (status) => {
         if (status.playbackState === "ended") {
           setPlaying(false);
@@ -504,7 +525,7 @@ export default function EntryDetailScreen() {
             <View style={styles.photosHeader}>
               <Text style={styles.photosTitle}>🖼️ {t("entry.photosTitle")}</Text>
               {photoUrls.length > 0 && (
-                <Text style={styles.photosCount}>{photoUrls.length}/{MAX_ENTRY_PHOTOS}</Text>
+                <Text style={styles.photosCount}>{photoUrls.length}/{getEntryPhotoLimit(isPremium)}</Text>
               )}
             </View>
             {photoUrls.length > 0 && (

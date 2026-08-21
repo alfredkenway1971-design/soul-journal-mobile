@@ -14,8 +14,9 @@ export default function PricingScreen() {
   const styles = useMemo(() => makeStyles(appFonts), [appFonts]);
   const t = useT();
   const isPremium = useSubscriptionStore((s) => s.isPremium);
-  const [monthlyPrice, setMonthlyPrice] = useState("$9.99");
-  const [yearlyPrice, setYearlyPrice] = useState("$95.99");
+  const [monthlyPrice, setMonthlyPrice] = useState("$12.99");
+  const [yearlyPrice, setYearlyPrice] = useState("$99.99");
+  const subscriptionEnd = useSubscriptionStore((s) => s.subscriptionEnd);
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,6 +56,11 @@ export default function PricingScreen() {
           <Text style={styles.activeEmoji}>👑</Text>
           <Text style={styles.activeTitle}>{t("pricing.youArePremium")}</Text>
           <Text style={styles.activeDesc}>{t("pricing.allUnlocked")}</Text>
+          {subscriptionEnd ? (
+            <Text style={styles.activeEnd}>
+              {t("pricing.endsOn")} {new Date(subscriptionEnd).toLocaleDateString()}
+            </Text>
+          ) : null}
         </View>
       </LinearGradient>
     );
@@ -100,7 +106,7 @@ export default function PricingScreen() {
           disabled={busy != null}
         >
           <View style={styles.saveBadge}>
-            <Text style={styles.saveBadgeText}>{t("pricing.save20")}</Text>
+            <Text style={styles.saveBadgeText}>{t("pricing.save36")}</Text>
           </View>
           <View style={styles.tierTop}>
             <Text style={[styles.tierName, { color: colors.white }]}>{t("pricing.yearly")}</Text>
@@ -111,6 +117,18 @@ export default function PricingScreen() {
           </Text>
           {busy === PRODUCT_IDS.yearly && <ActivityIndicator color={colors.white} style={{ marginTop: 12 }} />}
         </Pressable>
+
+        {/* Premium feature list (included language — no "unlimited") */}
+        <View style={[styles.featureCard, shadows.card]}>
+          <Text style={styles.featureTitle}>✨ {t("pricing.unlockAll")}</Text>
+          {t("pricing.featureList")
+            .split("|")
+            .map((f, i) => (
+              <Text key={i} style={styles.featureItem}>
+                • {f}
+              </Text>
+            ))}
+        </View>
 
         <Pressable style={styles.restoreBtn} onPress={async () => {
           const ok = await restorePurchases();
@@ -187,4 +205,12 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   activeEmoji: { fontSize: 44, marginBottom: 10 },
   activeTitle: { fontSize: 20, color: colors.text, fontFamily: appFonts.displayBold },
   activeDesc: { fontSize: 14, color: colors.textMuted, marginTop: 6, fontFamily: appFonts.body },
+  activeEnd: { fontSize: 12, color: colors.primary, marginTop: 10, fontFamily: appFonts.bodySemiBold, textAlign: "center" },
+  featureCard: {
+    ...glassCard,
+    padding: 18,
+    marginBottom: 6,
+  },
+  featureTitle: { fontSize: 15, color: colors.text, fontFamily: appFonts.displayBold, marginBottom: 8 },
+  featureItem: { fontSize: 13, color: colors.textMuted, lineHeight: 21, fontFamily: appFonts.body },
 });

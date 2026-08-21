@@ -23,8 +23,12 @@ export type PickResult =
   | { status: "denied" }
   | { status: "cancelled" };
 
-/** The PDF gallery renders up to 5 photos per entry (web parity). */
-export const MAX_ENTRY_PHOTOS = 5;
+/** Photo caps per entry: 3 free / 50 Premium (web parity spec). */
+export const MAX_ENTRY_PHOTOS_FREE = 3;
+export const MAX_ENTRY_PHOTOS_PREMIUM = 50;
+export function getEntryPhotoLimit(isPremium: boolean): number {
+  return isPremium ? MAX_ENTRY_PHOTOS_PREMIUM : MAX_ENTRY_PHOTOS_FREE;
+}
 
 /** base64 string -> Uint8Array (for Supabase storage upload) */
 function decodeBase64(b64: string): Uint8Array {
