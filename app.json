@@ -42,7 +42,8 @@
           "color": "#1d81ed"
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-speech-recognition"
     ]
   }
 }

@@ -31,6 +31,15 @@ const MOODS = [
 const PROMPTS_URL = "https://soul-journal-seven.vercel.app/api/journaling-prompts";
 const DREAM_URL = "https://soul-journal-seven.vercel.app/api/dream-reflection";
 
+/** App language code → BCP-47 speech locale for the native recognizer. */
+function speechLangCode(lang: string): string {
+  const map: Record<string, string> = {
+    en: "en-US", fr: "fr-CA", es: "es-ES", ar: "ar-SA",
+    zh: "zh-CN", ja: "ja-JP", sw: "sw-KE", de: "de-DE",
+  };
+  return map[lang] || "en-US";
+}
+
 export default function RecordScreen() {
   const isPremium = useSubscriptionStore((s) => s.isPremium);
   const user = useAuthStore((s) => s.user);
@@ -53,6 +62,9 @@ export default function RecordScreen() {
   const [dreamReflection, setDreamReflection] = useState<string | null>(null);
   const [dreamLoading, setDreamLoading] = useState(false);
   const [photos, setPhotos] = useState<PickedPhoto[]>([]);
+  const [isDictating, setIsDictating] = useState(false);
+  const dictationRef = useRef<{ base: string; finals: string; stop?: () => void }>({ base: "", finals: "" });
+  const dictationSubsRef = useRef<{ remove: () => void }[]>([]);
 
   useEffect(() => {
     // iOS REQUIRES playsInSilentMode:true together with allowsRecording:true —
@@ -120,6 +132,87 @@ export default function RecordScreen() {
     } finally {
       setIsTranscribing(false);
     }
+  };
+
+  /* ── Native dictation (free on-device speech-to-text; dev build only, graceful in Expo Go) ── */
+
+  const cleanupDictation = () => {
+    for (const sub of dictationSubsRef.current) {
+      try { sub.remove(); } catch {}
+    }
+    dictationSubsRef.current = [];
+  };
+
+  const startDictation = async () => {
+    if (isDictating) return;
+    let SR: any;
+    try {
+      // Lazy import on purpose: in Expo Go the native module is missing and
+      // evaluating it throws — we must never crash the app, just fall back.
+      const mod: any = await import("expo-speech-recognition");
+      SR = mod?.ExpoSpeechRecognitionModule;
+    } catch (e) {
+      console.warn("native STT unavailable (Expo Go?)", e);
+      Alert.alert(t("record.dictateUnavailableTitle"), t("record.dictateUnavailableBody"));
+      return;
+    }
+    if (!SR?.isRecognitionAvailable || !SR.isRecognitionAvailable()) {
+      Alert.alert(t("record.dictateUnavailableTitle"), t("record.dictateUnavailableBody"));
+      return;
+    }
+    try {
+      const perm = await SR.requestPermissionsAsync();
+      if (!perm?.granted) {
+        Alert.alert(t("record.dictateDeniedTitle"), t("record.dictateDeniedBody"));
+        return;
+      }
+    } catch (e) {
+      console.warn("perm error", e);
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    dictationRef.current = { base: text, finals: "" };
+    cleanupDictation();
+
+    const onResult = (e: any) => {
+      const results: { transcript?: string; isFinal?: boolean }[] = e?.results ?? [];
+      if (!results.length) return;
+      const finals = results.filter((r) => r.isFinal).map((r) => r.transcript || "").join(" ");
+      const interim = results.filter((r) => !r.isFinal).map((r) => r.transcript || "").join(" ");
+      if (finals) dictationRef.current.finals += (dictationRef.current.finals ? " " : "") + finals;
+      const full = (dictationRef.current.finals + (interim ? " " + interim : "")).trim();
+      if (full) setText(dictationRef.current.base ? `${dictationRef.current.base}\n${full}` : full);
+    };
+    const onError = (e: any) => {
+      console.warn("dictation error", e?.error, e?.message);
+      cleanupDictation();
+      setIsDictating(false);
+      if (e?.error === "not-allowed" || e?.error === "not-allowed-ios" || e?.error === "not-allowed-android") {
+        Alert.alert(t("record.dictateDeniedTitle"), t("record.dictateDeniedBody"));
+      }
+    };
+    const onEnd = () => {
+      cleanupDictation();
+      setIsDictating(false);
+    };
+    try {
+      dictationSubsRef.current = [
+        SR.addEventListener("result", onResult),
+        SR.addEventListener("error", onError),
+        SR.addEventListener("end", onEnd),
+      ];
+      SR.start({ lang: speechLangCode(language), interimResults: true, continuous: true, addsPunctuation: true });
+      dictationRef.current.stop = () => { try { SR.stop(); } catch {} };
+      setIsDictating(true);
+    } catch (e) {
+      console.warn("dictation start error", e);
+      cleanupDictation();
+      Alert.alert(t("record.dictateUnavailableTitle"), t("record.dictateUnavailableBody"));
+    }
+  };
+
+  const stopDictation = () => {
+    try { dictationRef.current.stop?.(); } catch {}
+    setIsDictating(false);
   };
 
   /* ── Photos (web parity: journal-photos bucket + entry_media rows) ── */
@@ -360,6 +453,20 @@ export default function RecordScreen() {
           {isTranscribing && <ActivityIndicator style={{ marginTop: 12 }} color={colors.primary} />}
         </View>
 
+        {/* Native dictation (free on-device speech-to-text; dev build, graceful in Expo Go) */}
+        <View style={styles.dictateRow}>
+          {!isDictating ? (
+            <Pressable style={[styles.dictateBtn, shadows.soft]} onPress={startDictation} disabled={isTranscribing}>
+              <Text style={styles.dictateBtnText}>🎙️ {t("record.dictate")}</Text>
+            </Pressable>
+          ) : (
+            <Pressable style={[styles.dictateBtn, styles.dictateBtnActive]} onPress={stopDictation}>
+              <Text style={styles.dictateBtnText}>⏹️ {t("record.dictateStop")}</Text>
+            </Pressable>
+          )}
+          {isDictating && <Text style={styles.dictateHint}>{t("record.dictating")}</Text>}
+        </View>
+
         {/* Text area */}
         <TextInput
           style={[styles.textInput, shadows.soft]}
@@ -520,6 +627,18 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
   micActive: {},
   micIcon: { fontSize: 32 },
   micLabel: { fontSize: 15, color: colors.text, marginTop: 2, fontFamily: appFonts.bodySemiBold },
+  dictateRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14 },
+  dictateBtn: {
+    backgroundColor: colors.cardGlassStrong,
+    borderRadius: radius.pill,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+  },
+  dictateBtnActive: { backgroundColor: colors.primary },
+  dictateBtnText: { fontSize: 15, color: colors.text, fontFamily: appFonts.bodySemiBold },
+  dictateHint: { fontSize: 14, color: colors.primary, fontFamily: appFonts.body },
   textInput: {
     backgroundColor: colors.cardGlassStrong,
     borderRadius: radius.card,
