@@ -53,7 +53,6 @@
       "@react-native-community/datetimepicker",
       "expo-speech-recognition",
       "expo-sharing",
-      "expo-status-bar",
       "expo-asset"
     ],
     "extra": {
