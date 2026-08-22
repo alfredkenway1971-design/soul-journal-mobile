@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors, radius, fonts, glassCard, shadows } from "@/theme";
@@ -42,7 +43,8 @@ export default function AuthScreen() {
     <LinearGradient colors={[colors.bgTop, colors.bgMid, colors.bgBottom]} style={styles.root}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={styles.logo}>✨ Soul Journal</Text>
+          <Image source={require("../../assets/logo-leaf.png")} style={styles.logoImage} resizeMode="contain" />
+          <Text style={styles.logo}>Soul Journal</Text>
           <Text style={styles.tagline}>
             {t("auth.tagline")}
           </Text>
@@ -113,6 +115,12 @@ const makeStyles = (appFonts: AppFonts) => StyleSheet.create({
     color: colors.primary,
     textAlign: "center",
     fontFamily: appFonts.displayBold,
+  },
+  logoImage: {
+    width: 120,
+    height: 130,
+    alignSelf: "center",
+    marginBottom: -6,
   },
   tagline: {
     fontSize: 15,
