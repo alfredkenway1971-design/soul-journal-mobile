@@ -21,7 +21,11 @@ export const PRODUCT_IDS = {
   yearly: "souljournal_premium_yearly", // $99.99/yr (v5.0 — Save ~36%)
 } as const;
 
-type IAPModule = typeof import("expo-in-app-purchases");
+// expo-in-app-purchases was REMOVED (2026-08): its native module imports
+// expo.modules.core.ExportedModule, deleted from expo-modules-core long ago,
+// so it cannot compile on SDK 54+. Store billing is planned via RevenueCat
+// (see STORE-SETUP.md). All calls below still degrade gracefully.
+type IAPModule = any;
 
 let iapModule: IAPModule | null = null;
 
@@ -29,7 +33,7 @@ let iapModule: IAPModule | null = null;
 function iap(): IAPModule {
   if (!iapModule) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    iapModule = require("expo-in-app-purchases") as IAPModule;
+    iapModule = null; // expo-in-app-purchases removed — see note at top of file.
   }
   return iapModule;
 }

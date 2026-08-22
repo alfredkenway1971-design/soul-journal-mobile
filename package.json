@@ -37,7 +37,6 @@
     "expo-font": "~56.0.7",
     "expo-haptics": "~56.0.3",
     "expo-image-picker": "~56.0.24",
-    "expo-in-app-purchases": "^14.5.0",
     "expo-linear-gradient": "~56.0.4",
     "expo-linking": "~56.0.17",
     "expo-location": "~56.0.24",
@@ -64,8 +63,8 @@
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web"
   },
   "private": true
