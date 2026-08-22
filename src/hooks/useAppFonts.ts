@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useFontStore, fontFamilies } from "@/store/fontStore";
 
 /** The full font family map consumed by makeStyles factories across the app. */
@@ -18,5 +19,8 @@ export interface AppFonts {
  */
 export function useAppFonts(): AppFonts {
   const font = useFontStore((s) => s.font);
-  return fontFamilies(font);
+  // Stable object: only a new reference when the font choice actually changes.
+  // Without this, every render produced a fresh map, forcing every screen to
+  // discard and rebuild its entire stylesheet (the font-switch lag).
+  return useMemo(() => fontFamilies(font), [font]);
 }
